@@ -49,6 +49,16 @@ function New-Lnk($finalPath, $arguments, $desc) {
 New-Lnk $appLnk    ('"{0}"' -f $vbs)          'مذكّرتي — التقويم والمهام'
 New-Lnk $widgetLnk ('"{0}" widget' -f $vbs)   'مذكّرتي — ويدجت سطح المكتب'
 
+# ضبط الأيقونة عبر Shell.Application (يتعامل مع أسماء الملفات العربية)
+$app = New-Object -ComObject Shell.Application
+foreach ($pair in @(@($desktop, ($appName + '.lnk')), @($startup, ($widgetName + '.lnk')))) {
+  try {
+    $lnk = $app.Namespace($pair[0]).ParseName($pair[1]).GetLink
+    $lnk.SetIconLocation($icon, 0)
+    $lnk.Save()
+  } catch {}
+}
+
 Write-Output "تم إنشاء:"
 Write-Output "  $appLnk"
 Write-Output "  $widgetLnk"
