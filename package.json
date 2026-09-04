@@ -1,0 +1,10 @@
+{
+  "name": "mudhakkirah",
+  "version": "1.0.0",
+  "description": "تقويم هجري وميلادي مع جدول مهام وملاحظات شخصية — تطبيق ويب بدون خطوة بناء",
+  "private": true,
+  "scripts": {
+    "dev": "python serve.py 5173",
+    "start": "python serve.py 5173"
+  }
+}

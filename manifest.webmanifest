@@ -1,0 +1,16 @@
+{
+  "name": "مذكّرتي — التقويم والمهام",
+  "short_name": "مذكّرتي",
+  "description": "تقويم هجري وميلادي مع جدول مهام وملاحظات شخصية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8fa",
+  "theme_color": "#1f6feb",
+  "icons": [
+    { "src": "./assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "./assets/icon.png", "sizes": "256x256", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
