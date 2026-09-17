@@ -20,6 +20,7 @@ const routes = {
 };
 
 const viewEl = document.getElementById("view");
+const manifestLink = document.getElementById("manifestLink");
 let currentCleanup = null;
 
 /* ----------------------- الأيقونات الثابتة ----------------------- */
@@ -52,6 +53,10 @@ function render() {
   });
   closeNav();
   viewEl.scrollTo(0, 0);
+
+  // في وضع الويدجت نبدّل ملف الـ manifest حتى يصير "إضافة إلى الشاشة الرئيسية"
+  // تثبيتًا مستقلًا يفتح مباشرة على الويدجت (اسم وأيقونة خاصّان به).
+  manifestLink.href = name === "widget" ? "./manifest-widget.webmanifest" : "./manifest.webmanifest";
 }
 
 /* ----------------------- القائمة الجانبية (جوال) ----------------------- */

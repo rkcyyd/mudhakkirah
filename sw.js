@@ -1,13 +1,14 @@
 /* service worker بسيط — يعمل بلا إنترنت */
 /* استراتيجية: الشبكة أولًا للملفات (حتى تصل التحديثات)، ثم التخزين المؤقت احتياطيًا. */
 
-const CACHE = "mudhakkirah-v2";
+const CACHE = "mudhakkirah-v3";
 const SHELL = [
   "./",
   "./index.html",
   "./css/styles.css",
   "./assets/fonts/fonts.css",
   "./manifest.webmanifest",
+  "./manifest-widget.webmanifest",
   "./assets/icon.svg",
   "./assets/icon.png",
 ];
