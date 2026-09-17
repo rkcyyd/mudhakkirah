@@ -32,6 +32,47 @@ function isValidToken(t) {
   return typeof t === "string" && /^[a-f0-9-]{20,60}$/i.test(t);
 }
 
+function isValidKeyHash(h) {
+  return typeof h === "string" && /^[a-f0-9]{64}$/i.test(h);
+}
+
+const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024; // 2MB يكفي بسهولة لمهام شخصية
+
+async function handleDataPush(request, env, cors) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "invalid json" }, 400, cors);
+  }
+  const { keyHash, snapshot } = body || {};
+  if (!isValidKeyHash(keyHash)) return json({ error: "invalid keyHash" }, 400, cors);
+  if (!snapshot || typeof snapshot !== "object") return json({ error: "invalid snapshot" }, 400, cors);
+
+  const serialized = JSON.stringify(snapshot);
+  if (serialized.length > MAX_SNAPSHOT_BYTES) return json({ error: "snapshot too large" }, 413, cors);
+
+  await env.MUDH_KV.put(`data:${keyHash}`, serialized, {
+    expirationTtl: 60 * 60 * 24 * 180, // ٦ أشهر بلا مزامنة قبل التنظيف التلقائي
+  });
+  return json({ ok: true }, 200, cors);
+}
+
+async function handleDataPull(request, env, cors) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "invalid json" }, 400, cors);
+  }
+  const { keyHash } = body || {};
+  if (!isValidKeyHash(keyHash)) return json({ error: "invalid keyHash" }, 400, cors);
+
+  const raw = await env.MUDH_KV.get(`data:${keyHash}`);
+  if (!raw) return json({ error: "not found" }, 404, cors);
+  return new Response(`{"snapshot":${raw}}`, { status: 200, headers: { ...JSON_HEADERS, ...cors } });
+}
+
 async function handleSync(request, env, cors) {
   let body;
   try {
@@ -171,6 +212,8 @@ export default {
     if (url.pathname === "/sync" && request.method === "POST") return handleSync(request, env, cors);
     if (url.pathname === "/sync" && request.method === "DELETE") return handleUnsync(request, env, cors);
     if (url.pathname === "/test-push" && request.method === "POST") return handleTestPush(request, env, cors);
+    if (url.pathname === "/data/push" && request.method === "POST") return handleDataPush(request, env, cors);
+    if (url.pathname === "/data/pull" && request.method === "POST") return handleDataPull(request, env, cors);
     if (url.pathname === "/run-now" && request.method === "POST") {
       const result = await runDueScan(env);
       return json(result, 200, cors);

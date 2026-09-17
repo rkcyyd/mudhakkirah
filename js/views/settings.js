@@ -7,6 +7,7 @@ import { toISODate } from "../dates.js";
 import { requestPermission, permissionState } from "../notifications.js";
 import { sha256Hex } from "../lock.js";
 import { syncPush, unsyncPush, sendTestPush } from "../push-sync.js";
+import { startNewSync, linkWithKey, stopSync, pushNow, pullNow, getLocalSyncKey } from "../sync.js";
 
 export function renderSettings(root) {
   const wrap = el("div.page");
@@ -96,6 +97,19 @@ function paint(wrap) {
     paintPushStatus(pushBox, "متصل بخدمة التنبيهات الخلفية ✓");
   }
 
+  /* ------- المزامنة بين الأجهزة ------- */
+  const syncBox = el("div.sync-status");
+  wrap.append(
+    card("المزامنة بين الأجهزة", [
+      el("p.hint", {}, [
+        "اربط جوالك ولابتوبك برمز واحد فتظهر أي مهمة تسجّلها على أي جهاز في البقية تلقائيًا. ",
+        "الخادم لا يرى الرمز نفسه أبدًا، فقط بصمته — بدونه لا يقدر أي أحد الوصول لبياناتك.",
+      ]),
+      s.syncEnabled ? syncEnabledView(syncBox) : syncSetupView(syncBox),
+      syncBox,
+    ])
+  );
+
   /* ------- الخصوصية ------- */
   wrap.append(
     card("الخصوصية والأمان", [
@@ -133,8 +147,8 @@ function paint(wrap) {
         stat(stats.types, "نوع"),
       ]),
       el("p.hint", {}, [
-        "البيانات محفوظة محليًا في هذا المتصفح فقط. للنقل إلى جهاز آخر استخدم التصدير ثم الاستيراد. ",
-        "المزامنة السحابية التلقائية ميزة قادمة.",
+        "للمزامنة التلقائية المستمرة بين أجهزتك استخدم بطاقة «المزامنة بين الأجهزة» أعلاه. ",
+        "التصدير/الاستيراد هنا مفيد لنسخة احتياطية لمرة واحدة.",
       ]),
       el("div.btn-row", {}, [
         el("button.btn.btn-primary", { onclick: exportData }, [icon("download", 16), "تصدير نسخة (JSON)"]),
@@ -208,6 +222,95 @@ function importInput() {
 function paintPushStatus(box, text) {
   clear(box);
   box.append(el("p.hint.push-hint", {}, [text]));
+}
+
+function syncSetupView(statusBox) {
+  return el("div.btn-row", {}, [
+    el("button.btn.btn-primary", {
+      onclick: async () => {
+        paintPushStatus(statusBox, "جارٍ الإعداد...");
+        const key = await startNewSync();
+        showSyncKeyModal(key, true);
+      },
+    }, [icon("target", 16), "بدء مزامنة جديدة"]),
+    el("button.btn.btn-ghost", { onclick: () => openLinkForm(statusBox) }, ["لدي رمز من جهاز آخر"]),
+  ]);
+}
+
+function syncEnabledView(statusBox) {
+  const key = getLocalSyncKey();
+  return el("div.sync-enabled", {}, [
+    el("div.btn-row", {}, [
+      el("span.tag.ok", {}, [icon("target", 13), " المزامنة مُفعّلة"]),
+      el("button.btn.btn-ghost.btn-sm", { onclick: () => showSyncKeyModal(key, false) }, ["عرض رمز الربط"]),
+      el("button.btn.btn-ghost.btn-sm", {
+        onclick: async () => {
+          paintPushStatus(statusBox, "جارٍ المزامنة...");
+          const [pr, pl] = await Promise.all([pushNow(), pullNow()]);
+          paintPushStatus(statusBox, (pr.ok && pl.ok) ? "تمت المزامنة الآن ✓" : "تعذّرت المزامنة، سيُعاد المحاولة تلقائيًا.");
+        },
+      }, [icon("clock", 13), "مزامنة الآن"]),
+      el("button.btn.btn-danger-ghost.btn-sm", {
+        onclick: () => {
+          if (confirm("إيقاف المزامنة على هذا الجهاز؟ بياناتك هنا تبقى كما هي، فقط لن تتزامن بعد الآن.")) {
+            stopSync();
+          }
+        },
+      }, ["إيقاف"]),
+    ]),
+  ]);
+}
+
+function showSyncKeyModal(key, firstTime) {
+  openModal(firstTime ? "رمز المزامنة الخاص بك" : "رمز الربط", (body, close) => {
+    body.append(
+      el("p.hint", {}, [
+        firstTime
+          ? "افتح مذكّرتي على جهازك الآخر (الإعدادات ← المزامنة ← «لدي رمز من جهاز آخر») وأدخل هذا الرمز:"
+          : "استخدم هذا الرمز لربط جهاز آخر بنفس بياناتك:",
+      ]),
+      el("div.sync-key-display", {}, [key]),
+      el("div.btn-row", {}, [
+        el("button.btn.btn-primary", {
+          onclick: async () => {
+            try {
+              await navigator.clipboard.writeText(key);
+              alert("نُسخ الرمز.");
+            } catch {
+              alert("تعذّر النسخ التلقائي — انسخه يدويًا.");
+            }
+          },
+        }, [icon("download", 14), "نسخ"]),
+        el("button.btn.btn-ghost", { onclick: close }, ["إغلاق"]),
+      ]),
+      firstTime && el("p.hint", {}, ["احتفظ بهذا الرمز — هو مفتاح الوصول لبياناتك، لا تشاركه إلا مع أجهزتك."]),
+    );
+  });
+}
+
+function openLinkForm(statusBox) {
+  openModal("ربط بجهاز آخر", (body, close) => {
+    const input = el("input.field", { type: "text", placeholder: "مثال: XKQ7-2MPR-9FWT-4CDJ" });
+    const err = el("div.form-err");
+    body.append(
+      field("رمز المزامنة", input),
+      err,
+      el("div.modal-actions", {}, [
+        el("span.spacer"),
+        el("button.btn.btn-ghost", { onclick: close }, ["إلغاء"]),
+        el("button.btn.btn-primary", {
+          onclick: async () => {
+            const v = input.value.trim();
+            if (!v) { err.textContent = "أدخل الرمز."; return; }
+            close();
+            paintPushStatus(statusBox, "جارٍ الربط...");
+            const r = await linkWithKey(v);
+            paintPushStatus(statusBox, r.ok ? "تم الربط والمزامنة ✓" : "تعذّر الربط — تأكد من الرمز.");
+          },
+        }, ["ربط"]),
+      ])
+    );
+  });
 }
 
 function openLockForm(changing) {

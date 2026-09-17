@@ -8,6 +8,9 @@
 
 const STORAGE_KEY = "mudhakkirah:v1";
 
+// الحقول الوحيدة من الإعدادات التي تُزامَن بين الأجهزة (البقية خاصة بهذا الجهاز: الثيم، القفل، الإذن...)
+const SYNCABLE_SETTINGS = ["hidePersonalFromCalendar", "showExamCountdown", "weekStart"];
+
 /* ============================ الحالة الافتراضية ============================ */
 
 function uid() {
@@ -75,9 +78,13 @@ function defaultState() {
   return {
     version: 1,
     types: defaultTypes(),
-    tasks: [], // { id, title, typeId, date, time, note, done, createdAt, reminders:[], remindersFired:{} }
-    habits: [], // { id, label, color, createdAt, archived, log:{ "YYYY-MM-DD": true } }
+    tasks: [], // { id, title, typeId, date, time, note, done, createdAt, updatedAt, reminders:[], remindersFired:{} }
+    habits: [], // { id, label, color, createdAt, updatedAt, archived, log:{ "YYYY-MM-DD": true } }
     notes: "", // مساحة الملاحظات الشخصية (نص حر)
+    notesUpdatedAt: 0,
+    // شواهد حذف (تُستخدم فقط عند تفعيل المزامنة بين الأجهزة، لضمان عدم "عودة" عنصر محذوف)
+    tombstones: { tasks: {}, habits: {}, types: {} },
+    settingsUpdatedAt: 0, // للحقول القابلة للمزامنة أدناه فقط
     settings: {
       hidePersonalFromCalendar: true, // زر إخفاء المهام الشخصية من التقويم
       theme: "light", // light | dark
@@ -86,6 +93,8 @@ function defaultState() {
       notificationsEnabled: false, // تنبيهات المهام
       appLockEnabled: false, // قفل بالرمز
       appLockHash: null, // بصمة SHA-256 للرمز (لا يُحفظ الرمز نفسه)
+      syncEnabled: false, // مزامنة بين الأجهزة
+      syncKey: null, // رمز المزامنة (يبقى محليًا فقط، يُرسَل مُجزّأً SHA-256 للخادم)
     },
   };
 }
@@ -127,6 +136,13 @@ function migrate(saved) {
   }
   merged.tasks = Array.isArray(merged.tasks) ? merged.tasks : [];
   merged.habits = Array.isArray(merged.habits) ? merged.habits : [];
+  merged.tombstones = {
+    tasks: { ...(saved.tombstones?.tasks || {}) },
+    habits: { ...(saved.tombstones?.habits || {}) },
+    types: { ...(saved.tombstones?.types || {}) },
+  };
+  merged.notesUpdatedAt = saved.notesUpdatedAt || 0;
+  merged.settingsUpdatedAt = saved.settingsUpdatedAt || 0;
   return merged;
 }
 
@@ -166,6 +182,7 @@ export const store = {
       color,
       showOnCalendar,
       system: false,
+      updatedAt: Date.now(),
     };
     if (examKind) type.examKind = examKind;
     state.types = [...state.types, type];
@@ -174,7 +191,7 @@ export const store = {
   },
   updateType(id, patch) {
     state.types = state.types.map((t) =>
-      t.id === id ? { ...t, ...patch } : t
+      t.id === id ? { ...t, ...patch, updatedAt: Date.now() } : t
     );
     emit();
   },
@@ -182,9 +199,10 @@ export const store = {
     const t = store.getType(id);
     if (!t || t.system) return false;
     state.types = state.types.filter((x) => x.id !== id);
+    state.tombstones.types[id] = Date.now();
     // المهام المرتبطة تُحوّل إلى "بدون نوع"
     state.tasks = state.tasks.map((task) =>
-      task.typeId === id ? { ...task, typeId: null } : task
+      task.typeId === id ? { ...task, typeId: null, updatedAt: Date.now() } : task
     );
     emit();
     return true;
@@ -211,6 +229,7 @@ export const store = {
       reminders, // [{ id, amount, unit:'minutes'|'hours'|'days', repeatEvery:null|{amount,unit} }]
       remindersFired: {},
       createdAt: new Date().toISOString(),
+      updatedAt: Date.now(),
     };
     state.tasks = [...state.tasks, task];
     emit();
@@ -218,25 +237,26 @@ export const store = {
   },
   updateTask(id, patch) {
     state.tasks = state.tasks.map((t) =>
-      t.id === id ? { ...t, ...patch } : t
+      t.id === id ? { ...t, ...patch, updatedAt: Date.now() } : t
     );
     emit();
   },
   /** لتغيير تاريخ مهمة (السحب في التقويم) — يمسح سجلّ التنبيهات المُطلقة لهذا التاريخ. */
   moveTask(id, newDate) {
     state.tasks = state.tasks.map((t) =>
-      t.id === id ? { ...t, date: newDate, remindersFired: {} } : t
+      t.id === id ? { ...t, date: newDate, remindersFired: {}, updatedAt: Date.now() } : t
     );
     emit();
   },
   toggleTask(id) {
     state.tasks = state.tasks.map((t) =>
-      t.id === id ? { ...t, done: !t.done } : t
+      t.id === id ? { ...t, done: !t.done, updatedAt: Date.now() } : t
     );
     emit();
   },
   removeTask(id) {
     state.tasks = state.tasks.filter((t) => t.id !== id);
+    state.tombstones.tasks[id] = Date.now();
     emit();
   },
   /** يسجّل أن قاعدة تنبيه معيّنة أُطلقت (لمنع التكرار)، مع طابع زمني لدعم "التكرار". */
@@ -264,6 +284,7 @@ export const store = {
       target, // عدد الأيام المستهدف أسبوعيًا (1-7)
       archived: false,
       createdAt: new Date().toISOString(),
+      updatedAt: Date.now(),
       log: {},
     };
     state.habits = [...state.habits, habit];
@@ -271,11 +292,12 @@ export const store = {
     return habit;
   },
   updateHabit(id, patch) {
-    state.habits = state.habits.map((h) => (h.id === id ? { ...h, ...patch } : h));
+    state.habits = state.habits.map((h) => (h.id === id ? { ...h, ...patch, updatedAt: Date.now() } : h));
     emit();
   },
   removeHabit(id) {
     state.habits = state.habits.filter((h) => h.id !== id);
+    state.tombstones.habits[id] = Date.now();
     emit();
   },
   toggleHabitDay(id, dateISO) {
@@ -284,7 +306,7 @@ export const store = {
       const log = { ...h.log };
       if (log[dateISO]) delete log[dateISO];
       else log[dateISO] = true;
-      return { ...h, log };
+      return { ...h, log, updatedAt: Date.now() };
     });
     emit();
   },
@@ -295,6 +317,7 @@ export const store = {
   },
   setNotes(text) {
     state.notes = text;
+    state.notesUpdatedAt = Date.now();
     emit();
   },
 
@@ -304,7 +327,91 @@ export const store = {
   },
   updateSettings(patch) {
     state.settings = { ...state.settings, ...patch };
+    if (SYNCABLE_SETTINGS.some((k) => k in patch)) state.settingsUpdatedAt = Date.now();
     emit();
+  },
+
+  /* -------------------- المزامنة بين الأجهزة -------------------- */
+
+  /** لقطة من كل البيانات القابلة للمزامنة (بدون إعدادات خاصة بالجهاز). */
+  getSyncSnapshot() {
+    return {
+      types: state.types,
+      tasks: state.tasks,
+      habits: state.habits,
+      notes: state.notes,
+      notesUpdatedAt: state.notesUpdatedAt,
+      tombstones: state.tombstones,
+      settingsUpdatedAt: state.settingsUpdatedAt,
+      settingsSubset: Object.fromEntries(SYNCABLE_SETTINGS.map((k) => [k, state.settings[k]])),
+    };
+  },
+
+  /**
+   * يدمج لقطة واردة من جهاز آخر مع الحالة المحلية: لكل سجلّ (نوع/مهمة/عادة)
+   * يفوز الأحدث updatedAt، وشواهد الحذف (tombstones) تُقصي أي سجلّ أقدم منها.
+   * يُرجع true إن تغيّر شيء فعليًا محليًا (يستحق حفظًا وإرسالًا للخادم مجددًا).
+   */
+  mergeRemoteSnapshot(remote) {
+    if (!remote) return false;
+    let changed = false;
+
+    // دمج شواهد الحذف أولًا (اتحاد، الأحدث يبقى إن تكرّر المعرّف)
+    for (const kind of ["tasks", "habits", "types"]) {
+      const remoteTomb = remote.tombstones?.[kind] || {};
+      for (const [id, at] of Object.entries(remoteTomb)) {
+        if (!state.tombstones[kind][id] || at > state.tombstones[kind][id]) {
+          state.tombstones[kind][id] = at;
+          changed = true;
+        }
+      }
+    }
+
+    const mergeList = (localList, remoteList, kind) => {
+      const byId = new Map(localList.map((x) => [x.id, x]));
+      for (const r of remoteList || []) {
+        const tombAt = state.tombstones[kind][r.id];
+        if (tombAt && tombAt >= (r.updatedAt || 0)) continue; // محذوف بعده — يُتجاهَل
+        const l = byId.get(r.id);
+        if (!l || (r.updatedAt || 0) > (l.updatedAt || 0)) {
+          byId.set(r.id, r);
+          changed = true;
+        }
+      }
+      // أزل أي عنصر محلي أصبح له شاهد حذف أحدث منه (حُذف من جهاز آخر)
+      for (const [id, item] of [...byId]) {
+        const tombAt = state.tombstones[kind][id];
+        if (tombAt && tombAt >= (item.updatedAt || 0)) {
+          byId.delete(id);
+          changed = true;
+        }
+      }
+      return [...byId.values()];
+    };
+
+    state.types = mergeList(state.types, remote.types, "types");
+    state.tasks = mergeList(state.tasks, remote.tasks, "tasks");
+    state.habits = mergeList(state.habits, remote.habits, "habits");
+
+    if ((remote.notesUpdatedAt || 0) > (state.notesUpdatedAt || 0)) {
+      state.notes = remote.notes || "";
+      state.notesUpdatedAt = remote.notesUpdatedAt;
+      changed = true;
+    }
+    if ((remote.settingsUpdatedAt || 0) > (state.settingsUpdatedAt || 0) && remote.settingsSubset) {
+      state.settings = { ...state.settings, ...remote.settingsSubset };
+      state.settingsUpdatedAt = remote.settingsUpdatedAt;
+      changed = true;
+    }
+
+    // ضمان بقاء الأنواع الأساسية دائمًا
+    const ids = new Set(state.types.map((t) => t.id));
+    for (const dt of defaultTypes()) {
+      if (!ids.has(dt.id) && !state.tombstones.types[dt.id]) state.types.push(dt);
+    }
+
+    if (changed) emit();
+    return changed;
   },
 
   /* -------------------- استيراد / تصدير -------------------- */

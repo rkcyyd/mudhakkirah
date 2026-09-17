@@ -694,6 +694,23 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
 
 .lock-confirm { width: 100%; padding: .7rem; }
 
+/* ===================== المزامنة ===================== */
+
+.sync-key-display {
+  font-family: "Consolas", "SFMono-Regular", monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-align: center;
+  direction: ltr;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: .9rem;
+  color: var(--primary);
+  user-select: all;
+}
+
 .sec-title {
   font-weight: 700;
   font-size: .95rem;
