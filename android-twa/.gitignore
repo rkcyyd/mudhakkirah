@@ -1,0 +1,8 @@
+node_modules/
+build/
+app/build/
+.gradle/
+*.apk
+*.aab
+android.keystore
+package-lock.json

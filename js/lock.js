@@ -10,10 +10,33 @@ import { el } from "./dom.js";
 import { iconHTML } from "./icons.js";
 
 const SESSION_KEY = "mudh_unlocked";
+const ATTEMPTS_KEY = "mudh_lock_attempts";
 
 export async function sha256Hex(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** حماية بسيطة من التخمين المتكرر: قفل مؤقّت متصاعد بعد كل ٥ محاولات فاشلة. */
+function getAttempts() {
+  try { return JSON.parse(localStorage.getItem(ATTEMPTS_KEY)) || { count: 0, lockUntil: 0 }; }
+  catch { return { count: 0, lockUntil: 0 }; }
+}
+function setAttempts(a) {
+  try { localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(a)); } catch {}
+}
+function registerFailure() {
+  const a = getAttempts();
+  a.count++;
+  if (a.count > 0 && a.count % 5 === 0) {
+    const tier = Math.min(Math.floor(a.count / 5), 6); // يتصاعد حتى يصل لسقف
+    a.lockUntil = Date.now() + tier * 30_000; // ٣٠ ثانية × مستوى التصعيد
+  }
+  setAttempts(a);
+  return a;
+}
+function registerSuccess() {
+  setAttempts({ count: 0, lockUntil: 0 });
 }
 
 export function isUnlockedThisSession() {
@@ -36,6 +59,7 @@ export function showLockScreen(expectedHash, onUnlock) {
   const dots = [];
   let entered = "";
   let shaking = false;
+  let lockTimer = null;
 
   const dotsRow = el("div.lock-dots", {},
     Array.from({ length: 6 }, () => {
@@ -52,13 +76,43 @@ export function showLockScreen(expectedHash, onUnlock) {
     dots.forEach((d, i) => d.classList.toggle("filled", i < entered.length));
   };
 
+  function isLocked() {
+    return getAttempts().lockUntil > Date.now();
+  }
+
+  function applyLockUI() {
+    const { lockUntil } = getAttempts();
+    const remaining = lockUntil - Date.now();
+    const locked = remaining > 0;
+    overlay.querySelectorAll(".lock-key, .lock-confirm").forEach((b) => { b.disabled = locked; });
+    clearInterval(lockTimer);
+    if (locked) {
+      err.style.visibility = "visible";
+      const tick = () => {
+        const left = Math.ceil((getAttempts().lockUntil - Date.now()) / 1000);
+        if (left <= 0) {
+          err.textContent = "رمز غير صحيح، حاول مرة أخرى";
+          applyLockUI();
+          return;
+        }
+        err.textContent = `محاولات كثيرة فاشلة — انتظر ${left} ثانية`;
+      };
+      tick();
+      lockTimer = setInterval(tick, 1000);
+    }
+  }
+
   const submit = async () => {
+    if (isLocked()) return;
     const hash = await sha256Hex(entered);
     if (hash === expectedHash) {
+      registerSuccess();
+      clearInterval(lockTimer);
       markUnlocked();
       overlay.remove();
       onUnlock();
     } else {
+      registerFailure();
       shaking = true;
       overlay.querySelector(".lock-box").classList.add("shake");
       err.style.visibility = "visible";
@@ -67,12 +121,13 @@ export function showLockScreen(expectedHash, onUnlock) {
         entered = "";
         updateDots();
         shaking = false;
+        applyLockUI();
       }, 420);
     }
   };
 
   const press = (digit) => {
-    if (shaking || entered.length >= 6) return;
+    if (shaking || isLocked() || entered.length >= 6) return;
     entered += digit;
     updateDots();
     err.style.visibility = "hidden";
@@ -105,6 +160,7 @@ export function showLockScreen(expectedHash, onUnlock) {
   );
 
   document.body.append(overlay);
+  applyLockUI();
 
   window.addEventListener("keydown", function onKey(e) {
     if (!document.body.contains(overlay)) {

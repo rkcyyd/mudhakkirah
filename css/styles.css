@@ -689,6 +689,8 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
 .lock-key:hover { background: var(--surface-2); }
 .lock-key:active { transform: scale(.92); background: var(--surface-2); }
 .lock-key-del { color: var(--text-dim); }
+.lock-key:disabled, .lock-confirm:disabled { opacity: .4; cursor: not-allowed; }
+.lock-err { font-variant-numeric: tabular-nums; }
 
 .lock-confirm { width: 100%; padding: .7rem; }
 

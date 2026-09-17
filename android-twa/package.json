@@ -1,0 +1,7 @@
+{
+  "name": "mudhakkirah-twa",
+  "private": true,
+  "devDependencies": {
+    "@bubblewrap/cli": "^1.21.1"
+  }
+}
