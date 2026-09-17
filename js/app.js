@@ -12,6 +12,7 @@ import { renderSettings } from "./views/settings.js";
 import { renderWidget } from "./views/widget.js";
 import { startScheduler } from "./notifications.js";
 import { showLockScreen, isUnlockedThisSession } from "./lock.js";
+import { syncPush, scheduleSync } from "./push-sync.js";
 
 const routes = {
   calendar: renderCalendar,
@@ -95,6 +96,7 @@ themeBtn.addEventListener("click", () => {
 
 store.subscribe((state) => {
   applyTheme(state.settings.theme || "light");
+  scheduleSync();
 });
 
 /* ----------------------- التشغيل ----------------------- */
@@ -105,6 +107,10 @@ function boot() {
   document.body.classList.add("unlocked");
   render();
   startScheduler();
+  if (store.getSettings().notificationsEnabled) {
+    syncPush();
+    setInterval(syncPush, 5 * 60_000); // يُبقي المزامنة والاشتراك ساريين
+  }
 }
 
 const lockSettings = store.getSettings();

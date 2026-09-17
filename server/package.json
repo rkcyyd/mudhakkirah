@@ -1,0 +1,17 @@
+{
+  "name": "mudhakkirah-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "خدمة خلفية صغيرة (Cloudflare Worker) لإرسال تنبيهات المهام حتى لو التطبيق مقفول تمامًا",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.133.0"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

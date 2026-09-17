@@ -1,0 +1,19 @@
+name = "mudhakkirah-push"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "6d7dee0da153e980e1080a2db0f2f1d5"
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[[kv_namespaces]]
+binding = "MUDH_KV"
+id = "7e226308d7274fda8890f90a2a9983a5"
+
+# أسرار تُضاف عبر: wrangler secret put VAPID_PRIVATE_KEY  (لا تُكتب هنا)
+# المتغيّرات العامة (غير سرية):
+[vars]
+VAPID_PUBLIC_KEY = "BASArqGCZqxxme86NCQWr_29TWRgiVm3jKERJjhi1HsLEhKZQU3MY8cQN6ShH_YRbVj-VgBbMyFIuekMwTvoEY4"
+VAPID_SUBJECT = "mailto:push@mudhakkirah.local"
+ALLOWED_ORIGIN = "https://rkcyyd.github.io"

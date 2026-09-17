@@ -6,6 +6,7 @@ import { el, clear, icon, openModal } from "../dom.js";
 import { toISODate } from "../dates.js";
 import { requestPermission, permissionState } from "../notifications.js";
 import { sha256Hex } from "../lock.js";
+import { syncPush, unsyncPush, sendTestPush } from "../push-sync.js";
 
 export function renderSettings(root) {
   const wrap = el("div.page");
@@ -46,6 +47,7 @@ function paint(wrap) {
 
   /* ------- التنبيهات ------- */
   const perm = permissionState();
+  const pushBox = el("div.push-status");
   wrap.append(
     card("التنبيهات", [
       toggleRow(
@@ -55,9 +57,17 @@ function paint(wrap) {
           if (v) {
             const ok = await requestPermission();
             store.updateSettings({ notificationsEnabled: ok });
-            if (!ok) alert("رفض المتصفح إذن الإشعارات. فعّلها من إعدادات الموقع بالمتصفح ثم أعد المحاولة.");
+            if (!ok) {
+              alert("رفض المتصفح إذن الإشعارات. فعّلها من إعدادات الموقع بالمتصفح ثم أعد المحاولة.");
+              return;
+            }
+            paintPushStatus(pushBox, "جارٍ الربط بخدمة التنبيهات...");
+            const r = await syncPush();
+            paintPushStatus(pushBox, r.ok ? "متصل — التنبيهات تعمل حتى مع إغلاق التطبيق ✓" : "تعذّر الاتصال بخدمة التنبيهات، سيُعاد المحاولة تلقائيًا.");
           } else {
             store.updateSettings({ notificationsEnabled: false });
+            await unsyncPush();
+            clear(pushBox);
           }
         }
       ),
@@ -65,11 +75,26 @@ function paint(wrap) {
         el("p.hint", {}, ["الإذن مرفوض من المتصفح حاليًا. لتفعيله: إعدادات الموقع ← الإشعارات ← السماح."]),
       el("p.hint", {}, [
         "تُضبط تنبيهات كل مهمة من نموذج المهمة نفسها (قبلها بكذا، أو متكررة). ",
-        "تعمل التنبيهات ما دام التطبيق أو الويدجت مفتوحًا (ولو في الخلفية) على هذا الجهاز — ",
-        "لضمان وصولها حتى مع إغلاق التطبيق بالكامل نحتاج خدمة إشعارات من خادم، ميزة يمكن إضافتها لاحقًا.",
+        "التنبيهات هنا مزدوجة: محلية فورية ما دام التطبيق/الويدجت مفتوحًا، ",
+        "وأخرى عبر خدمة خلفية تصل حتى مع إغلاق التطبيق بالكامل.",
       ]),
+      s.notificationsEnabled && perm === "granted"
+        ? el("div.btn-row", {}, [
+            el("button.btn.btn-ghost.btn-sm", {
+              onclick: async () => {
+                paintPushStatus(pushBox, "يُرسِل تنبيهًا تجريبيًا...");
+                const ok = await sendTestPush();
+                paintPushStatus(pushBox, ok ? "أُرسل — يفترض يوصلك خلال لحظات." : "تعذّر الإرسال.");
+              },
+            }, [icon("bell", 14), "اختبار الآن"]),
+          ])
+        : null,
+      pushBox,
     ])
   );
+  if (s.notificationsEnabled && perm === "granted") {
+    paintPushStatus(pushBox, "متصل بخدمة التنبيهات الخلفية ✓");
+  }
 
   /* ------- الخصوصية ------- */
   wrap.append(
@@ -178,6 +203,11 @@ function importInput() {
     },
   });
   return _importInput;
+}
+
+function paintPushStatus(box, text) {
+  clear(box);
+  box.append(el("p.hint.push-hint", {}, [text]));
 }
 
 function openLockForm(changing) {
