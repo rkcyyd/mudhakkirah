@@ -2,7 +2,7 @@
  * views/settings.js — الإعدادات + استيراد/تصدير البيانات
  */
 import { store } from "../store.js";
-import { el, clear } from "../dom.js";
+import { el, clear, icon } from "../dom.js";
 import { toISODate } from "../dates.js";
 
 export function renderSettings(root) {
@@ -56,8 +56,8 @@ function paint(wrap) {
         "المزامنة السحابية التلقائية ميزة قادمة.",
       ]),
       el("div.btn-row", {}, [
-        el("button.btn.btn-primary", { onclick: exportData }, ["⬇️ تصدير نسخة (JSON)"]),
-        el("button.btn.btn-ghost", { onclick: () => importInput.click() }, ["⬆️ استيراد نسخة"]),
+        el("button.btn.btn-primary", { onclick: exportData }, [icon("download", 16), "تصدير نسخة (JSON)"]),
+        el("button.btn.btn-ghost", { onclick: () => importInput.click() }, [icon("upload", 16), "استيراد نسخة"]),
       ]),
       importInput(),
     ])
@@ -71,7 +71,7 @@ function paint(wrap) {
         onclick: () => {
           if (confirm("متأكد؟ سيُحذف كل شيء ولا يمكن التراجع.")) store.resetAll();
         },
-      }, ["حذف كل البيانات"]),
+      }, [icon("trash", 16), "حذف كل البيانات"]),
     ])
   );
 

@@ -2,7 +2,7 @@
  * taskform.js — نموذج إضافة/تعديل مهمة (يُستخدم في التقويم وصفحة المهام)
  */
 import { store } from "./store.js";
-import { el, openModal } from "./dom.js";
+import { el, icon, openModal } from "./dom.js";
 import { toISODate } from "./dates.js";
 
 /**
@@ -80,7 +80,7 @@ export function openTaskForm({ date, task, onSaved } = {}) {
                 onSaved?.();
               }
             },
-          }, ["حذف"]),
+          }, [icon("trash", 16), "حذف"]),
         el("span.spacer"),
         el("button.btn.btn-ghost", { onclick: close }, ["إلغاء"]),
         el("button.btn.btn-primary", { onclick: save }, [editing ? "حفظ" : "إضافة"]),

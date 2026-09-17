@@ -2,7 +2,7 @@
  * views/calendar.js — عرض التقويم الشهري (هجري + ميلادي)
  */
 import { store, typeVisibleOnCalendar } from "../store.js";
-import { el, clear } from "../dom.js";
+import { el, clear, icon } from "../dom.js";
 import { openTaskForm } from "../taskform.js";
 import { examCountdownBanner } from "../examcountdown.js";
 import {
@@ -46,9 +46,9 @@ function paint(wrap) {
   /* ------- شريط التنقل ------- */
   const header = el("div.cal-header", {}, [
     el("div.cal-nav", {}, [
-      el("button.icon-btn", { onclick: () => shift(1), "aria-label": "الشهر التالي" }, ["›"]),
+      el("button.icon-btn", { onclick: () => shift(-1), "aria-label": "الشهر السابق" }, [icon("chevron-end", 18)]),
       el("button.btn.btn-ghost.btn-sm", { onclick: goToday }, ["اليوم"]),
-      el("button.icon-btn", { onclick: () => shift(-1), "aria-label": "الشهر السابق" }, ["‹"]),
+      el("button.icon-btn", { onclick: () => shift(1), "aria-label": "الشهر التالي" }, [icon("chevron-start", 18)]),
     ]),
     el("div.cal-title", {}, [
       el("div.cal-title-hijri", {}, [title.hijri]),
@@ -76,7 +76,7 @@ function paint(wrap) {
     el("button.fab", {
       onclick: () => openTaskForm({ date: state.selected }),
       "aria-label": "إضافة مهمة",
-    }, ["＋"])
+    }, [icon("plus", 24)])
   );
 }
 
@@ -134,7 +134,7 @@ function dayPanel(settings) {
           el("button.check", {
             onclick: () => store.toggleTask(t.id),
             "aria-label": "تبديل الإنجاز",
-          }, [t.done ? "✓" : ""]),
+          }, [t.done ? icon("check", 14) : ""]),
           el("span.tt-color", { style: `background:${type?.color || "#8b949e"}` }),
           el("div.tt-main", {
             onclick: () => openTaskForm({ task: t }),
@@ -142,8 +142,8 @@ function dayPanel(settings) {
             el("div.tt-title", {}, [t.title]),
             el("div.tt-meta", {}, [
               type ? type.label : "بدون نوع",
-              t.time ? " · " + t.time : "",
-              hidden ? " · مخفي من التقويم" : "",
+              t.time ? "  " + t.time : "",
+              hidden ? "  ·  مخفي من التقويم" : "",
             ]),
           ]),
         ])
@@ -160,7 +160,7 @@ function dayPanel(settings) {
       ]),
       el("button.btn.btn-primary.btn-sm", {
         onclick: () => openTaskForm({ date: state.selected }),
-      }, ["＋ مهمة"]),
+      }, [icon("plus", 16), "مهمة"]),
     ]),
     list,
   ]);

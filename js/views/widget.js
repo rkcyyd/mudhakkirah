@@ -5,7 +5,7 @@
  * (تحديد الإنجاز، إضافة سريعة). تُفتح عادةً في نافذة صغيرة بلا إطار.
  */
 import { store } from "../store.js";
-import { el, clear } from "../dom.js";
+import { el, clear, icon } from "../dom.js";
 import { openTaskForm } from "../taskform.js";
 import { examCountdownBanner } from "../examcountdown.js";
 import {
@@ -44,6 +44,9 @@ function paint(wrap) {
   const today = new Date();
   const d = describeDay(today);
 
+  /* شريط علوي ملوّن (يعوّض عن غياب ترويسة نظام قابلة للتصميم) */
+  wrap.append(el("div.w-accent"));
+
   /* رأس */
   wrap.append(
     el("div.w-head", {}, [
@@ -56,8 +59,8 @@ function paint(wrap) {
         el("button.icon-btn", {
           title: "إضافة مهمة",
           onclick: () => openTaskForm({ date: todayISO }),
-        }, ["＋"]),
-        el("a.icon-btn", { href: "#/calendar", title: "فتح التطبيق كاملًا" }, ["⤢"]),
+        }, [icon("plus", 18)]),
+        el("a.icon-btn", { href: "#/calendar", title: "فتح التطبيق كاملًا" }, [icon("maximize", 16)]),
       ]),
     ])
   );
@@ -125,7 +128,7 @@ function row(t) {
     el("div.w-task-body", { onclick: () => openTaskForm({ task: t }) }, [
       el("div.w-task-title", {}, [t.title]),
       el("div.w-task-meta", {}, [
-        (type ? type.label : "بدون نوع") + (t.time ? " · " + t.time : ""),
+        (type ? type.label : "بدون نوع") + (t.time ? "  " + t.time : ""),
       ]),
     ]),
   ]);

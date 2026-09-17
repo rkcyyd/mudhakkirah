@@ -2,6 +2,7 @@
  * app.js — نقطة البداية: التوجيه (router)، القائمة، الوضع الليلي
  */
 import { store } from "./store.js";
+import { iconHTML } from "./icons.js";
 import { renderCalendar } from "./views/calendar.js";
 import { renderTasks } from "./views/tasks.js";
 import { renderTypes } from "./views/types.js";
@@ -20,6 +21,13 @@ const routes = {
 
 const viewEl = document.getElementById("view");
 let currentCleanup = null;
+
+/* ----------------------- الأيقونات الثابتة ----------------------- */
+document.getElementById("menuToggle").innerHTML = iconHTML("menu", 20);
+document.querySelectorAll(".nav-link").forEach((a) => {
+  const slot = a.querySelector(".nav-icon");
+  if (slot) slot.innerHTML = iconHTML(a.dataset.icon, 18);
+});
 
 function parseHash() {
   const raw = location.hash.replace(/^#\/?/, "");
@@ -64,12 +72,14 @@ document.getElementById("menuToggle").addEventListener("click", () => {
 scrim.addEventListener("click", closeNav);
 
 /* ----------------------- الوضع الليلي ----------------------- */
+const themeBtn = document.getElementById("themeToggle");
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
+  themeBtn.innerHTML = iconHTML(theme === "dark" ? "moon" : "sun", 19);
 }
 applyTheme(store.getSettings().theme || "light");
 
-document.getElementById("themeToggle").addEventListener("click", () => {
+themeBtn.addEventListener("click", () => {
   const next = store.getSettings().theme === "dark" ? "light" : "dark";
   store.updateSettings({ theme: next });
 });

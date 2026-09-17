@@ -2,7 +2,7 @@
  * views/types.js — إدارة أنواع المهام (إضافة/تعديل/حذف/لون/إظهار في التقويم)
  */
 import { store } from "../store.js";
-import { el, clear, openModal } from "../dom.js";
+import { el, clear, icon, openModal } from "../dom.js";
 import { toArabicDigits } from "../dates.js";
 
 const CATEGORIES = {
@@ -36,7 +36,7 @@ function paint(wrap) {
   wrap.append(
     el("div.page-head", {}, [
       el("h2", {}, ["أنواع المهام"]),
-      el("button.btn.btn-primary", { onclick: () => openTypeForm() }, ["＋ نوع جديد"]),
+      el("button.btn.btn-primary", { onclick: () => openTypeForm() }, [icon("plus", 16), "نوع جديد"]),
     ]),
     el("p.hint", {}, [
       "لكل نوع لون يميّزه في التقويم. الاختبارات لها ثلاثة أشكال: ميد، كويز، فاينل. ",
@@ -64,7 +64,7 @@ function paint(wrap) {
         el("div.type-foot", {}, [
           el("span.muted.sm", {}, [toArabicDigits(count) + " مهمة"]),
           el("span.spacer"),
-          el("button.btn.btn-ghost.btn-sm", { onclick: () => openTypeForm(t) }, ["تعديل"]),
+          el("button.btn.btn-ghost.btn-sm", { onclick: () => openTypeForm(t) }, [icon("edit", 14), "تعديل"]),
           !t.system &&
             el("button.btn.btn-danger-ghost.btn-sm", {
               onclick: () => {
@@ -72,7 +72,7 @@ function paint(wrap) {
                   store.removeType(t.id);
                 }
               },
-            }, ["حذف"]),
+            }, [icon("trash", 14), "حذف"]),
         ]),
       ])
     );

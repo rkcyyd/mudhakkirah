@@ -1,6 +1,7 @@
 /**
  * dom.js — أدوات صغيرة لبناء عناصر HTML
  */
+import { iconHTML } from "./icons.js";
 
 /**
  * إنشاء عنصر: el("div.card", { onclick }, [child, "نص"])
@@ -38,6 +39,11 @@ export function el(spec, props = {}, children = []) {
   return node;
 }
 
+/** عنصر <span> يحوي أيقونة SVG: icon("plus", 18) */
+export function icon(name, size = 20) {
+  return el("span.icon", { html: iconHTML(name, size) });
+}
+
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
   return node;
@@ -58,7 +64,7 @@ export function openModal(title, buildContent) {
   box.append(
     el("div.modal-head", {}, [
       el("h3", {}, [title]),
-      el("button.icon-btn", { onclick: close, "aria-label": "إغلاق" }, ["✕"]),
+      el("button.icon-btn", { onclick: close, "aria-label": "إغلاق" }, [icon("close", 18)]),
     ])
   );
   const body = el("div.modal-body");

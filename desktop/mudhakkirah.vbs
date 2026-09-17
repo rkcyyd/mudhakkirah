@@ -7,7 +7,7 @@
 '  e.g.  APP_URL = "https://USERNAME.github.io/mudhakkirah"
 ' ============================================================
 
-APP_URL = "http://localhost:5173"
+APP_URL = "https://rkcyyd.github.io/mudhakkirah"
 
 ' ---------- setup ----------
 Dim sh  : Set sh  = CreateObject("WScript.Shell")

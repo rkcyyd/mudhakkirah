@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#1f6feb" />
   <title>مذكّرتي — التقويم والمهام</title>
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%93%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
 
   <link rel="stylesheet" href="./assets/fonts/fonts.css" />
@@ -15,17 +16,20 @@
 <body>
   <div id="app">
     <header class="topbar">
-      <button class="icon-btn" id="menuToggle" aria-label="القائمة">☰</button>
-      <div class="brand">مذكّرتي</div>
-      <button class="icon-btn" id="themeToggle" aria-label="الوضع الليلي">◐</button>
+      <button class="icon-btn" id="menuToggle" aria-label="القائمة"></button>
+      <div class="brand">
+        <img class="brand-mark" src="./assets/icon.svg" alt="" width="22" height="22" />
+        <span>مذكّرتي</span>
+      </div>
+      <button class="icon-btn" id="themeToggle" aria-label="الوضع الليلي"></button>
     </header>
 
     <nav class="sidenav" id="sidenav">
-      <a href="#/calendar" data-route="calendar" class="nav-link">🗓️ التقويم</a>
-      <a href="#/tasks" data-route="tasks" class="nav-link">✅ المهام</a>
-      <a href="#/types" data-route="types" class="nav-link">🏷️ أنواع المهام</a>
-      <a href="#/notes" data-route="notes" class="nav-link">📝 ملاحظات شخصية</a>
-      <a href="#/settings" data-route="settings" class="nav-link">⚙️ الإعدادات</a>
+      <a href="#/calendar" data-route="calendar" data-icon="calendar" class="nav-link"><span class="nav-icon"></span>التقويم</a>
+      <a href="#/tasks" data-route="tasks" data-icon="tasks" class="nav-link"><span class="nav-icon"></span>المهام</a>
+      <a href="#/types" data-route="types" data-icon="tag" class="nav-link"><span class="nav-icon"></span>أنواع المهام</a>
+      <a href="#/notes" data-route="notes" data-icon="note" class="nav-link"><span class="nav-icon"></span>ملاحظات شخصية</a>
+      <a href="#/settings" data-route="settings" data-icon="settings" class="nav-link"><span class="nav-icon"></span>الإعدادات</a>
     </nav>
     <div class="nav-scrim" id="navScrim"></div>
 
