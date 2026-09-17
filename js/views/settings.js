@@ -7,7 +7,7 @@ import { toISODate } from "../dates.js";
 import { requestPermission, permissionState } from "../notifications.js";
 import { sha256Hex } from "../lock.js";
 import { syncPush, unsyncPush, sendTestPush } from "../push-sync.js";
-import { startNewSync, linkWithKey, stopSync, pushNow, pullNow, getLocalSyncKey } from "../sync.js";
+import { startNewSync, linkWithKey, stopSync, pushNow, getLocalSyncKey } from "../sync.js";
 
 export function renderSettings(root) {
   const wrap = el("div.page");
@@ -246,8 +246,8 @@ function syncEnabledView(statusBox) {
       el("button.btn.btn-ghost.btn-sm", {
         onclick: async () => {
           paintPushStatus(statusBox, "جارٍ المزامنة...");
-          const [pr, pl] = await Promise.all([pushNow(), pullNow()]);
-          paintPushStatus(statusBox, (pr.ok && pl.ok) ? "تمت المزامنة الآن ✓" : "تعذّرت المزامنة، سيُعاد المحاولة تلقائيًا.");
+          const r = await pushNow();
+          paintPushStatus(statusBox, r.ok ? "تمت المزامنة الآن ✓" : "تعذّرت المزامنة، سيُعاد المحاولة تلقائيًا.");
         },
       }, [icon("clock", 13), "مزامنة الآن"]),
       el("button.btn.btn-danger-ghost.btn-sm", {

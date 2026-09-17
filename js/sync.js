@@ -37,7 +37,8 @@ async function keyHash() {
   return key ? sha256Hex(key) : null;
 }
 
-async function pushNow() {
+/** يرفع اللقطة المحلية الحالية كما هي (بدون سحب أولًا). */
+async function rawPush() {
   const hash = await keyHash();
   if (!hash) return { ok: false, reason: "no-key" };
   try {
@@ -71,12 +72,23 @@ async function pullNow() {
   }
 }
 
+/**
+ * يسحب أولًا ويدمج (حتى لا نرفع نسخة محلية أقدم فتُفقد تغييرات جاءت من
+ * جهاز آخر)، ثم يرفع النتيجة المدموجة. هذا هو المسار الآمن الذي يجب
+ * استخدامه دائمًا بدل الرفع المباشر.
+ */
+async function pushNow() {
+  const pull = await pullNow(); // يدمج أي تحديثات من الخادم في الحالة المحلية أولًا
+  if (!pull.ok) return pull; // لا شبكة/رمز غير صالح — لا فائدة من محاولة الرفع
+  return rawPush();
+}
+
 /** يبدأ مزامنة جديدة على هذا الجهاز بمفتاح جديد، ويرفع بياناته الحالية. */
 export async function startNewSync() {
   const key = generateSyncKey();
   saveLocalSyncKey(key);
   store.updateSettings({ syncEnabled: true, syncKey: key });
-  await pushNow();
+  await rawPush(); // لا يوجد شيء على الخادم بعد لسحبه
   return key;
 }
 
@@ -91,7 +103,7 @@ export async function linkWithKey(key) {
     store.updateSettings({ syncEnabled: false, syncKey: null });
     return pull;
   }
-  await pushNow(); // إرسال ما لدينا محليًا مدموجًا مع ما سُحب
+  await rawPush(); // إرسال ما لدينا محليًا مدموجًا مع ما سُحب فقط للتو
   return pull;
 }
 
