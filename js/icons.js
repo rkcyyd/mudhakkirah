@@ -23,6 +23,11 @@ const PATHS = {
   search: '<circle cx="10.5" cy="10.5" r="7"/><line x1="21" y1="21" x2="15.5" y2="15.5"/>',
   download: '<path d="M12 3v13"/><polyline points="7,11.5 12,16.5 17,11.5"/><line x1="4" y1="20" x2="20" y2="20"/>',
   upload: '<path d="M12 20V7"/><polyline points="7,11.5 12,6.5 17,11.5"/><line x1="4" y1="4" x2="20" y2="4"/>',
+  target: '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+  bell: '<path d="M6 10a6 6 0 1 1 12 0c0 4.2 1.2 5.6 1.8 6.2a.7.7 0 0 1-.5 1.2H4.7a.7.7 0 0 1-.5-1.2C4.8 15.6 6 14.2 6 10Z"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/>',
+  "bell-off": '<path d="M6 10a6 6 0 0 1 3-5.2"/><path d="M12 4a6 6 0 0 1 6 6c0 4.2 1.2 5.6 1.8 6.2a.7.7 0 0 1-.5 1.2H8.5"/><path d="M4.7 17.4A.7.7 0 0 0 5.2 18.6h.3"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/><line x1="3" y1="3" x2="21" y2="21"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><polyline points="12,7.5 12,12 15.5,14"/>',
+  lock: '<rect x="4.5" y="11" width="15" height="9.5" rx="2.2"/><path d="M8 11V7.3a4 4 0 0 1 8 0V11"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none"/>',
 };
 
 /**

@@ -6,14 +6,18 @@ import { iconHTML } from "./icons.js";
 import { renderCalendar } from "./views/calendar.js";
 import { renderTasks } from "./views/tasks.js";
 import { renderTypes } from "./views/types.js";
+import { renderHabits } from "./views/habits.js";
 import { renderNotes } from "./views/notes.js";
 import { renderSettings } from "./views/settings.js";
 import { renderWidget } from "./views/widget.js";
+import { startScheduler } from "./notifications.js";
+import { showLockScreen, isUnlockedThisSession } from "./lock.js";
 
 const routes = {
   calendar: renderCalendar,
   tasks: renderTasks,
   types: renderTypes,
+  habits: renderHabits,
   notes: renderNotes,
   settings: renderSettings,
   widget: renderWidget,
@@ -96,7 +100,19 @@ store.subscribe((state) => {
 /* ----------------------- التشغيل ----------------------- */
 window.addEventListener("hashchange", render);
 if (!location.hash) location.hash = "#/calendar";
-render();
+
+function boot() {
+  document.body.classList.add("unlocked");
+  render();
+  startScheduler();
+}
+
+const lockSettings = store.getSettings();
+if (lockSettings.appLockEnabled && lockSettings.appLockHash && !isUnlockedThisSession()) {
+  showLockScreen(lockSettings.appLockHash, boot);
+} else {
+  boot();
+}
 
 /* ----------------------- PWA (يعمل بلا إنترنت) ----------------------- */
 /* لا نُفعّل الـ service worker أثناء التطوير المحلي حتى تظهر التعديلات فورًا. */

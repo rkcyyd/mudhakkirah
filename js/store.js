@@ -75,13 +75,17 @@ function defaultState() {
   return {
     version: 1,
     types: defaultTypes(),
-    tasks: [], // { id, title, typeId, date:"YYYY-MM-DD", time:"HH:MM"|"", note, done, createdAt }
+    tasks: [], // { id, title, typeId, date, time, note, done, createdAt, reminders:[], remindersFired:{} }
+    habits: [], // { id, label, color, createdAt, archived, log:{ "YYYY-MM-DD": true } }
     notes: "", // مساحة الملاحظات الشخصية (نص حر)
     settings: {
       hidePersonalFromCalendar: true, // زر إخفاء المهام الشخصية من التقويم
       theme: "light", // light | dark
       weekStart: 0, // 0 = الأحد
       showExamCountdown: true, // عدّاد تنازلي لأقرب اختبار
+      notificationsEnabled: false, // تنبيهات المهام
+      appLockEnabled: false, // قفل بالرمز
+      appLockHash: null, // بصمة SHA-256 للرمز (لا يُحفظ الرمز نفسه)
     },
   };
 }
@@ -122,6 +126,7 @@ function migrate(saved) {
     if (!ids.has(dt.id)) merged.types.push(dt);
   }
   merged.tasks = Array.isArray(merged.tasks) ? merged.tasks : [];
+  merged.habits = Array.isArray(merged.habits) ? merged.habits : [];
   return merged;
 }
 
@@ -194,7 +199,7 @@ export const store = {
       .filter((t) => t.date === dateStr)
       .sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
   },
-  addTask({ title, typeId, date, time = "", note = "" }) {
+  addTask({ title, typeId, date, time = "", note = "", reminders = [] }) {
     const task = {
       id: uid(),
       title: title?.trim() || "بدون عنوان",
@@ -203,6 +208,8 @@ export const store = {
       time,
       note,
       done: false,
+      reminders, // [{ id, amount, unit:'minutes'|'hours'|'days', repeatEvery:null|{amount,unit} }]
+      remindersFired: {},
       createdAt: new Date().toISOString(),
     };
     state.tasks = [...state.tasks, task];
@@ -215,6 +222,13 @@ export const store = {
     );
     emit();
   },
+  /** لتغيير تاريخ مهمة (السحب في التقويم) — يمسح سجلّ التنبيهات المُطلقة لهذا التاريخ. */
+  moveTask(id, newDate) {
+    state.tasks = state.tasks.map((t) =>
+      t.id === id ? { ...t, date: newDate, remindersFired: {} } : t
+    );
+    emit();
+  },
   toggleTask(id) {
     state.tasks = state.tasks.map((t) =>
       t.id === id ? { ...t, done: !t.done } : t
@@ -223,6 +237,55 @@ export const store = {
   },
   removeTask(id) {
     state.tasks = state.tasks.filter((t) => t.id !== id);
+    emit();
+  },
+  /** يسجّل أن قاعدة تنبيه معيّنة أُطلقت (لمنع التكرار)، مع طابع زمني لدعم "التكرار". */
+  markReminderFired(taskId, ruleId, atISO) {
+    state.tasks = state.tasks.map((t) =>
+      t.id === taskId
+        ? { ...t, remindersFired: { ...(t.remindersFired || {}), [ruleId]: atISO } }
+        : t
+    );
+    emit();
+  },
+
+  /* -------------------- العادات -------------------- */
+  getHabits() {
+    return state.habits;
+  },
+  getHabit(id) {
+    return state.habits.find((h) => h.id === id) || null;
+  },
+  addHabit({ label, color = "#2da44e", target = 7 }) {
+    const habit = {
+      id: uid(),
+      label: label?.trim() || "عادة جديدة",
+      color,
+      target, // عدد الأيام المستهدف أسبوعيًا (1-7)
+      archived: false,
+      createdAt: new Date().toISOString(),
+      log: {},
+    };
+    state.habits = [...state.habits, habit];
+    emit();
+    return habit;
+  },
+  updateHabit(id, patch) {
+    state.habits = state.habits.map((h) => (h.id === id ? { ...h, ...patch } : h));
+    emit();
+  },
+  removeHabit(id) {
+    state.habits = state.habits.filter((h) => h.id !== id);
+    emit();
+  },
+  toggleHabitDay(id, dateISO) {
+    state.habits = state.habits.map((h) => {
+      if (h.id !== id) return h;
+      const log = { ...h.log };
+      if (log[dateISO]) delete log[dateISO];
+      else log[dateISO] = true;
+      return { ...h, log };
+    });
     emit();
   },
 
@@ -289,4 +352,34 @@ export function nextExam(todayISO) {
   const d1 = new Date(t.date + "T00:00:00");
   const daysLeft = Math.round((d1 - d0) / msPerDay);
   return { task: t, type, daysLeft };
+}
+
+/** إحصاءات عادة: السلسلة الحالية (streak) وعدد أيام آخر ٧/٣٠ يومًا. */
+export function habitStats(habit, todayISO) {
+  const today = todayISO || new Date().toISOString().slice(0, 10);
+  const dayMs = 86400000;
+  const toISO = (d) => {
+    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  let streak = 0;
+  let cursor = new Date(today + "T00:00:00");
+  // إذا لم يُنجَز اليوم بعد، نبدأ العدّ من الأمس حتى لا تنكسر السلسلة قبل نهاية اليوم
+  if (!habit.log[toISO(cursor)]) cursor = new Date(cursor.getTime() - dayMs);
+  while (habit.log[toISO(cursor)]) {
+    streak++;
+    cursor = new Date(cursor.getTime() - dayMs);
+  }
+
+  let last7 = 0, last30 = 0;
+  cursor = new Date(today + "T00:00:00");
+  for (let i = 0; i < 30; i++) {
+    const iso = toISO(new Date(cursor.getTime() - i * dayMs));
+    if (habit.log[iso]) {
+      last30++;
+      if (i < 7) last7++;
+    }
+  }
+  return { streak, last7, last30 };
 }

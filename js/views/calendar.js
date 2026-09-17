@@ -98,6 +98,21 @@ function dayCell(cell, settings) {
       state.selected = cell.iso;
       paint(node.closest(".cal-wrap"));
     },
+    ondragover: (e) => {
+      if (!draggingTaskId) return;
+      e.preventDefault();
+      node.classList.add("drop-target");
+    },
+    ondragleave: () => node.classList.remove("drop-target"),
+    ondrop: (e) => {
+      e.preventDefault();
+      node.classList.remove("drop-target");
+      if (draggingTaskId && cell.iso) {
+        store.moveTask(draggingTaskId, cell.iso);
+        state.selected = cell.iso;
+      }
+      draggingTaskId = null;
+    },
   }, [
     el("div.cell-nums", {}, [
       el("span.num-hijri", {}, [toArabicDigits(h.day)]),
@@ -108,7 +123,13 @@ function dayCell(cell, settings) {
         const type = store.getType(t.typeId);
         return el("span.chip" + (t.done ? ".done" : ""), {
           style: `--c:${type?.color || "#8b949e"}`,
-          title: t.title,
+          title: t.title + " — اسحبها ليوم آخر لتغيير التاريخ",
+          draggable: "true",
+          ondragstart: (e) => {
+            draggingTaskId = t.id;
+            e.dataTransfer.effectAllowed = "move";
+          },
+          ondragend: () => { draggingTaskId = null; },
         }, [el("span.chip-label", {}, [t.title])]);
       })
     ),
@@ -116,6 +137,9 @@ function dayCell(cell, settings) {
   ]);
   return node;
 }
+
+// أثناء السحب: معرّف المهمة المسحوبة حاليًا (حالة وحدة بسيطة، بلا حاجة لمكتبة DnD)
+let draggingTaskId = null;
 
 function dayPanel(settings) {
   const date = fromISODate(state.selected);
@@ -130,7 +154,14 @@ function dayPanel(settings) {
       const type = store.getType(t.typeId);
       const hidden = !typeVisibleOnCalendar(type, settings);
       list.append(
-        el("div.day-task" + (t.done ? ".done" : ""), {}, [
+        el("div.day-task" + (t.done ? ".done" : ""), {
+          draggable: "true",
+          ondragstart: (e) => {
+            draggingTaskId = t.id;
+            e.dataTransfer.effectAllowed = "move";
+          },
+          ondragend: () => { draggingTaskId = null; },
+        }, [
           el("button.check", {
             onclick: () => store.toggleTask(t.id),
             "aria-label": "تبديل الإنجاز",
