@@ -6,3 +6,4 @@ app/build/
 *.aab
 android.keystore
 package-lock.json
+*.idsig
