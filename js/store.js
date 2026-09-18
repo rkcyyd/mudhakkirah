@@ -9,7 +9,10 @@
 const STORAGE_KEY = "mudhakkirah:v1";
 
 // الحقول الوحيدة من الإعدادات التي تُزامَن بين الأجهزة (البقية خاصة بهذا الجهاز: الثيم، القفل، الإذن...)
-const SYNCABLE_SETTINGS = ["hidePersonalFromCalendar", "showExamCountdown", "weekStart", "primaryCalendar"];
+const SYNCABLE_SETTINGS = [
+  "hidePersonalFromCalendar", "showExamCountdown", "weekStart", "primaryCalendar",
+  "widgetSections", "widgetUpcomingRange",
+];
 
 /* ============================ الحالة الافتراضية ============================ */
 
@@ -91,6 +94,16 @@ function defaultState() {
       weekStart: 0, // 0 = الأحد
       showExamCountdown: true, // عدّاد تنازلي لأقرب اختبار
       primaryCalendar: "hijri", // hijri | gregorian — أي تاريخ يظهر أبرز (أكبر) في التقويم
+      // أقسام الويدجت القابلة للتفعيل والترتيب بحرية
+      widgetSections: {
+        examCountdown: true,
+        taskCountdown: false,
+        miniCalendar: false,
+        today: true,
+        upcoming: true,
+        habits: false,
+      },
+      widgetUpcomingRange: "week", // week | month — نطاق قسم "المهام القادمة" بالويدجت
       notificationsEnabled: false, // تنبيهات المهام
       appLockEnabled: false, // قفل بالرمز
       appLockHash: null, // بصمة SHA-256 للرمز (لا يُحفظ الرمز نفسه)
@@ -277,11 +290,12 @@ export const store = {
   getHabit(id) {
     return state.habits.find((h) => h.id === id) || null;
   },
-  addHabit({ label, color = "#2da44e", target = 7 }) {
+  addHabit({ label, color = "#2da44e", target = 7, icon = "🎯" }) {
     const habit = {
       id: uid(),
       label: label?.trim() || "عادة جديدة",
       color,
+      icon,
       target, // عدد الأيام المستهدف أسبوعيًا (1-7)
       archived: false,
       createdAt: new Date().toISOString(),
@@ -455,6 +469,27 @@ export function nextExam(todayISO) {
 
   if (!upcoming.length) return null;
   const { t, type } = upcoming[0];
+  const msPerDay = 86400000;
+  const d0 = new Date(today + "T00:00:00");
+  const d1 = new Date(t.date + "T00:00:00");
+  const daysLeft = Math.round((d1 - d0) / msPerDay);
+  return { task: t, type, daysLeft };
+}
+
+/**
+ * أقرب مهمة قادمة من أي نوع (اليوم أو بعده) غير منجزة.
+ * @returns {{task, type, daysLeft}|null}
+ */
+export function nextTask(todayISO) {
+  const today = todayISO || new Date().toISOString().slice(0, 10);
+  const upcoming = store
+    .getTasks()
+    .filter((t) => !t.done && t.date >= today)
+    .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
+
+  if (!upcoming.length) return null;
+  const t = upcoming[0];
+  const type = store.getType(t.typeId);
   const msPerDay = 86400000;
   const d0 = new Date(today + "T00:00:00");
   const d1 = new Date(t.date + "T00:00:00");

@@ -1,10 +1,10 @@
 /* ================================================================
-   مذكّرتي — الأنماط
+   رزنامة — الأنماط
    خط ثمانية (Thmanyah Sans) — RTL — وضع فاتح/ليلي
    ================================================================ */
 
 :root {
-  --font: "Thmanyah Sans", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font: "Thmanyah Sans", "Segoe UI", Tahoma, system-ui, sans-serif, "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji";
 
   --bg: #f6f8fa;
   --surface: #ffffff;
@@ -22,6 +22,7 @@
   --shadow-lg: 0 4px 10px rgba(27, 31, 36, .08), 0 14px 34px rgba(27, 31, 36, .10);
   --radius: 14px;
   --ease: cubic-bezier(.2, .8, .2, 1);
+  --emoji-font: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 :root[data-theme="dark"] {
@@ -564,58 +565,121 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
 
 .icon-btn.sm { width: 30px; height: 30px; }
 
-.habit-list { display: flex; flex-direction: column; gap: .8rem; }
+.habit-grid-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
 .habit-card {
   --c: var(--primary);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-inline-start: 4px solid var(--c);
   border-radius: var(--radius);
-  padding: 1rem 1.1rem;
+  padding: 1.1rem;
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: .7rem;
+  text-align: center;
   transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+  position: relative;
+  overflow: hidden;
 }
-.habit-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.habit-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 64px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 16%, transparent), transparent);
+  pointer-events: none;
+}
+.habit-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
 
-.habit-top { display: flex; align-items: center; gap: .6rem; }
-.habit-name { display: flex; align-items: center; gap: .5rem; font-weight: 700; flex: 1; min-width: 0; }
-.habit-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
-.habit-streak { font-weight: 800; font-size: 1.05rem; white-space: nowrap; }
+.habit-card-top { display: flex; align-items: center; justify-content: space-between; width: 100%; z-index: 1; }
+.habit-emoji {
+  font-family: var(--emoji-font);
+  font-size: 1.6rem;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--c) 16%, var(--surface));
+  border-radius: 12px;
+}
 .habit-actions { display: flex; gap: .15rem; }
+.habit-name { font-weight: 700; font-size: .98rem; z-index: 1; }
 
-.habit-grid {
-  display: grid;
-  grid-template-columns: repeat(14, 1fr);
-  gap: 4px;
-  /* بترتيب DOM الطبيعي (الأقدم أولًا) تُعرض الشبكة من الأقدم (يسار) إلى اليوم (يمين) — يوافق اتجاه القراءة RTL */
+.habit-ring-wrap { position: relative; width: 108px; height: 108px; }
+.habit-ring { width: 100%; height: 100%; }
+.habit-ring-text {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-weight: 900;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
 }
-.habit-day {
-  aspect-ratio: 1 / 1;
-  border-radius: 5px;
+
+.habit-week { display: flex; gap: 4px; width: 100%; justify-content: center; }
+.habit-daychip {
+  --c: var(--primary);
+  flex: 1;
+  max-width: 38px;
+  aspect-ratio: 1 / 1.15;
+  border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   cursor: pointer;
-  padding: 0;
+  padding: 3px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   transition: background .15s var(--ease), transform .12s var(--ease), border-color .15s var(--ease);
 }
-.habit-day:hover { border-color: var(--c); transform: scale(1.1); }
-.habit-day.done { background: var(--c); border-color: var(--c); }
-.habit-day:active { transform: scale(.9); }
+.habit-daychip-l { font-size: .62rem; color: var(--text-dim); }
+.habit-daychip-n { font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.habit-daychip:hover { border-color: var(--c); transform: scale(1.06); }
+.habit-daychip.done { background: var(--c); border-color: var(--c); }
+.habit-daychip.done .habit-daychip-l, .habit-daychip.done .habit-daychip-n { color: #fff; }
+.habit-daychip.is-today:not(.done) { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.habit-daychip:active { transform: scale(.92); }
 
 .habit-stats {
   display: flex;
-  flex-wrap: wrap;
-  gap: .3rem 1rem;
-  font-size: .78rem;
+  justify-content: space-between;
+  width: 100%;
+  font-size: .76rem;
   color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: .6rem;
 }
 
-@media (max-width: 480px) {
-  .habit-grid { grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; }
+/* منتقي الرمز التعبيري (نموذج إضافة/تعديل عادة) */
+.emoji-picker-row { display: flex; align-items: center; gap: .7rem; }
+.habit-emoji-pick-current {
+  font-family: var(--emoji-font);
+  font-size: 1.5rem;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  background: var(--surface-2);
+  border-radius: 12px;
+  flex-shrink: 0;
 }
+.emoji-picker { display: flex; flex-wrap: wrap; gap: .3rem; }
+.emoji-opt {
+  font-family: var(--emoji-font);
+  font-size: 1.15rem;
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background .15s var(--ease), border-color .15s var(--ease);
+}
+.emoji-opt:hover { background: var(--surface-2); }
+.emoji-opt.sel { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--surface)); }
 
 /* ===================== قفل التطبيق ===================== */
 
@@ -1056,6 +1120,80 @@ body.widget-mode .view > * { max-width: none; }
 }
 .w-none, .w-empty { color: var(--text-dim); font-size: .85rem; padding: .2rem 0; }
 .w-empty { text-align: center; padding: 2.5rem 0; font-size: 1rem; }
+.w-empty-hint { font-size: .78rem; margin-top: .3rem; }
+
+.w-sec-heading {
+  font-weight: 800;
+  font-size: .85rem;
+  margin-top: .3rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--border);
+}
+
+/* عادات الويدجت */
+.w-habits { display: flex; flex-direction: column; gap: .35rem; }
+.w-habit {
+  --c: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .4rem .55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.w-habit:hover { border-color: var(--c); }
+.w-habit.done { background: color-mix(in srgb, var(--c) 16%, var(--surface-2)); border-color: var(--c); }
+.w-habit-emoji { font-family: var(--emoji-font); font-size: 1.05rem; }
+.w-habit-label { flex: 1; font-weight: 600; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-habit-streak { font-size: .75rem; color: var(--text-dim); white-space: nowrap; }
+.w-habit-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  display: grid; place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.w-habit.done .w-habit-check { background: var(--c); border-color: var(--c); }
+
+/* تقويم مصغّر بالويدجت */
+.w-minical { display: flex; flex-direction: column; gap: 4px; }
+.w-minical-dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: .68rem;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+.w-minical-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.w-minical-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  font-size: .74rem;
+  font-variant-numeric: tabular-nums;
+  border-radius: 7px;
+  position: relative;
+}
+.w-minical-day.out { opacity: .35; }
+.w-minical-day.today { background: var(--today); color: #fff; font-weight: 800; }
+.w-minical-day.has:not(.today)::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
 
 .w-task {
   display: flex;

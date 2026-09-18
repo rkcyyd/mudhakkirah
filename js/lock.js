@@ -150,7 +150,7 @@ export function showLockScreen(expectedHash, onUnlock) {
   overlay.append(
     el("div.lock-box", {}, [
       el("div.lock-icon", { html: iconHTML("lock", 30) }),
-      el("div.lock-title", {}, ["مذكّرتي مقفلة"]),
+      el("div.lock-title", {}, ["رزنامة مقفلة"]),
       el("div.lock-sub", {}, ["أدخل الرمز لفتح التطبيق"]),
       dotsRow,
       err,

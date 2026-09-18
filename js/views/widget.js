@@ -1,19 +1,24 @@
 /**
- * views/widget.js — واجهة مصغّرة لسطح المكتب
+ * views/widget.js — واجهة مصغّرة لسطح المكتب/الجوال، بأقسام قابلة للتفعيل
  * ------------------------------------------------------------------
- * تعرض بسرعة: المتأخر، اليوم، والأيام السبعة القادمة — قابلة للتحكم
- * (تحديد الإنجاز، إضافة سريعة). تُفتح عادةً في نافذة صغيرة بلا إطار.
+ * كل قسم (عدّاد اختبار، عدّاد مهمة، تقويم مصغّر، اليوم، القادمة، العادات)
+ * يُفعَّل أو يُطفأ من الإعدادات ← الويدجت، فتبني بالضبط اللوحة اللي تناسبك
+ * بدون الحاجة لطلب تعديل جديد في كل مرة.
  */
-import { store } from "../store.js";
+import { store, habitStats } from "../store.js";
 import { el, clear, icon } from "../dom.js";
 import { openTaskForm } from "../taskform.js";
-import { examCountdownBanner } from "../examcountdown.js";
+import { examCountdownBanner, taskCountdownBanner } from "../examcountdown.js";
 import {
   toISODate,
   fromISODate,
   describeDay,
   toArabicDigits,
   weekdayName,
+  weekdayNames,
+  buildMonthGrid,
+  toHijriParts,
+  isToday,
 } from "../dates.js";
 
 export function renderWidget(root) {
@@ -43,7 +48,9 @@ function paint(wrap) {
   wrap.dataset.day = todayISO;
   const today = new Date();
   const d = describeDay(today);
-  const primaryGreg = store.getSettings().primaryCalendar === "gregorian";
+  const settings = store.getSettings();
+  const primaryGreg = settings.primaryCalendar === "gregorian";
+  const sections = settings.widgetSections || {};
 
   /* شريط علوي ملوّن (يعوّض عن غياب ترويسة نظام قابلة للتصميم) */
   wrap.append(el("div.w-accent"));
@@ -66,32 +73,58 @@ function paint(wrap) {
     ])
   );
 
-  const banner = examCountdownBanner();
-  if (banner) wrap.append(banner);
+  let any = false;
 
-  /* تجميع المهام */
+  if (sections.examCountdown) {
+    const b = examCountdownBanner();
+    if (b) { wrap.append(b); any = true; }
+  }
+  if (sections.taskCountdown) {
+    const b = taskCountdownBanner();
+    if (b) { wrap.append(b); any = true; }
+  }
+  if (sections.miniCalendar) { wrap.append(sectionMiniCalendar(todayISO)); any = true; }
+  if (sections.today) { any = sectionToday(wrap, todayISO) || any; }
+  if (sections.upcoming) { any = sectionUpcoming(wrap, todayISO, settings.widgetUpcomingRange || "week") || any; }
+  if (sections.habits) { const has = sectionHabits(wrap, todayISO); any = any || has; }
+
+  if (!any) {
+    wrap.append(el("div.w-empty", {}, [
+      "لا شيء لعرضه 🎉",
+      el("div.w-empty-hint", {}, ["فعّل أقسامًا من الإعدادات ← الويدجت"]),
+    ]));
+  }
+}
+
+/* ===================== الأقسام ===================== */
+
+function sectionToday(wrap, todayISO) {
   const tasks = store.getTasks().filter((t) => !t.done);
-  const overdue = tasks
-    .filter((t) => t.date < todayISO)
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const overdue = tasks.filter((t) => t.date < todayISO).sort((a, b) => b.date.localeCompare(a.date));
   const todayTasks = tasks.filter((t) => t.date === todayISO);
+  if (overdue.length) wrap.append(taskSection("متأخرة", overdue, "over"));
+  wrap.append(taskSection("اليوم", todayTasks, "today", true));
+  return overdue.length > 0 || todayTasks.length > 0;
+}
 
+function sectionUpcoming(wrap, todayISO, range) {
+  const tasks = store.getTasks().filter((t) => !t.done);
+  const today = fromISODate(todayISO);
   const horizon = new Date(today);
-  horizon.setDate(horizon.getDate() + 7);
+  if (range === "month") {
+    horizon.setMonth(horizon.getMonth() + 1);
+    horizon.setDate(0); // آخر يوم في الشهر الحالي
+  } else {
+    horizon.setDate(horizon.getDate() + 7);
+  }
   const horizonISO = toISODate(horizon);
   const upcoming = tasks
     .filter((t) => t.date > todayISO && t.date <= horizonISO)
     .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
 
-  if (!overdue.length && !todayTasks.length && !upcoming.length) {
-    wrap.append(el("div.w-empty", {}, ["لا مهام قريبة 🎉"]));
-    return;
-  }
+  if (!upcoming.length) return false;
 
-  if (overdue.length) wrap.append(section("متأخرة", overdue, "over"));
-  wrap.append(section("اليوم", todayTasks, "today", true));
-
-  /* الأيام القادمة مجمّعة حسب اليوم */
+  wrap.append(el("div.w-sec-heading", {}, [range === "month" ? "باقي الشهر" : "هذا الأسبوع"]));
   const byDay = new Map();
   for (const t of upcoming) {
     if (!byDay.has(t.date)) byDay.set(t.date, []);
@@ -100,11 +133,66 @@ function paint(wrap) {
   for (const [date, arr] of byDay) {
     const dd = fromISODate(date);
     const label = `${weekdayName(dd)}  ${describeDay(dd).hijriShort}`;
-    wrap.append(section(label, arr, ""));
+    wrap.append(taskSection(label, arr, ""));
   }
+  return true;
 }
 
-function section(title, arr, cls, showEmpty = false) {
+function sectionHabits(wrap, todayISO) {
+  const habits = store.getHabits();
+  if (!habits.length) return false;
+  wrap.append(el("div.w-sec-heading", {}, ["العادات اليوم"]));
+  const box = el("div.w-habits");
+  for (const h of habits) {
+    const done = !!h.log[todayISO];
+    const stats = habitStats(h, todayISO);
+    box.append(
+      el("button.w-habit" + (done ? ".done" : ""), {
+        style: `--c:${h.color}`,
+        onclick: () => store.toggleHabitDay(h.id, todayISO),
+      }, [
+        el("span.w-habit-emoji", {}, [h.icon || "🎯"]),
+        el("span.w-habit-label", {}, [h.label]),
+        stats.streak > 0 ? el("span.w-habit-streak", {}, [`🔥${toArabicDigits(stats.streak)}`]) : null,
+        el("span.w-habit-check", {}, [done ? icon("check", 12) : ""]),
+      ])
+    );
+  }
+  wrap.append(box);
+  return true;
+}
+
+function sectionMiniCalendar(todayISO) {
+  const today = fromISODate(todayISO);
+  const weekStart = store.getSettings().weekStart ?? 0;
+  const grid = buildMonthGrid(today.getFullYear(), today.getMonth(), weekStart);
+  const tasksByDate = new Set(store.getTasks().filter((t) => !t.done).map((t) => t.date));
+
+  const names = weekdayNames(true);
+  const ordered = names.slice(weekStart).concat(names.slice(0, weekStart));
+
+  const box = el("div.w-minical", {}, [
+    el("div.w-minical-dow", {}, ordered.map((n) => el("span", {}, [n[0]]))),
+  ]);
+  const gridEl = el("div.w-minical-grid");
+  for (const week of grid) {
+    for (const cell of week) {
+      const has = tasksByDate.has(cell.iso);
+      gridEl.append(
+        el("span.w-minical-day"
+          + (cell.inMonth ? "" : ".out")
+          + (isToday(cell.date) ? ".today" : "")
+          + (has ? ".has" : ""), {}, [toArabicDigits(cell.date.getDate())])
+      );
+    }
+  }
+  box.append(gridEl);
+  return box;
+}
+
+/* ===================== أدوات مشتركة ===================== */
+
+function taskSection(title, arr, cls, showEmpty = false) {
   const box = el("div.w-sec" + (cls ? "." + cls : ""));
   box.append(el("div.w-sec-title", {}, [
     title,

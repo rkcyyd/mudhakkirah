@@ -49,6 +49,26 @@ function paint(wrap) {
     ])
   );
 
+  /* ------- الويدجت ------- */
+  const ws = s.widgetSections || {};
+  const setWidgetSection = (key, val) =>
+    store.updateSettings({ widgetSections: { ...ws, [key]: val } });
+  wrap.append(
+    card("الويدجت", [
+      el("p.hint", {}, ["اختر أقسام واجهة #/widget المصغّرة (سطح المكتب أو تثبيت الجوال) — فعّل ما يهمّك فقط."]),
+      toggleRow("عدّاد أقرب اختبار", ws.examCountdown !== false, (v) => setWidgetSection("examCountdown", v)),
+      toggleRow("عدّاد أقرب مهمة (أي نوع)", !!ws.taskCountdown, (v) => setWidgetSection("taskCountdown", v)),
+      toggleRow("تقويم مصغّر للشهر", !!ws.miniCalendar, (v) => setWidgetSection("miniCalendar", v)),
+      toggleRow("اليوم (والمتأخرة)", ws.today !== false, (v) => setWidgetSection("today", v)),
+      toggleRow("المهام القادمة", ws.upcoming !== false, (v) => setWidgetSection("upcoming", v)),
+      ws.upcoming !== false &&
+        selectRow("نطاق المهام القادمة", s.widgetUpcomingRange || "week", {
+          week: "هذا الأسبوع", month: "باقي الشهر",
+        }, (v) => store.updateSettings({ widgetUpcomingRange: v })),
+      toggleRow("العادات اليوم", !!ws.habits, (v) => setWidgetSection("habits", v)),
+    ])
+  );
+
   /* ------- التنبيهات ------- */
   const perm = permissionState();
   const pushBox = el("div.push-status");
@@ -173,7 +193,7 @@ function paint(wrap) {
     ])
   );
 
-  wrap.append(el("p.version", {}, ["مذكّرتي — نسخة ١.٠"]));
+  wrap.append(el("p.version", {}, ["رزنامة — نسخة ١.٠"]));
 }
 
 /* ----------------- helpers ----------------- */
@@ -269,7 +289,7 @@ function showSyncKeyModal(key, firstTime) {
     body.append(
       el("p.hint", {}, [
         firstTime
-          ? "افتح مذكّرتي على جهازك الآخر (الإعدادات ← المزامنة ← «لدي رمز من جهاز آخر») وأدخل هذا الرمز:"
+          ? "افتح رزنامة على جهازك الآخر (الإعدادات ← المزامنة ← «لدي رمز من جهاز آخر») وأدخل هذا الرمز:"
           : "استخدم هذا الرمز لربط جهاز آخر بنفس بياناتك:",
       ]),
       el("div.sync-key-display", {}, [key]),
