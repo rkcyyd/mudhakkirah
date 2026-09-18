@@ -43,6 +43,9 @@ function paint(wrap) {
       selectRow("بداية الأسبوع", String(s.weekStart), {
         "0": "الأحد", "1": "الاثنين", "6": "السبت",
       }, (v) => store.updateSettings({ weekStart: Number(v) })),
+      selectRow("التاريخ البارز في التقويم", s.primaryCalendar || "hijri", {
+        hijri: "الهجري", gregorian: "الميلادي",
+      }, (v) => store.updateSettings({ primaryCalendar: v })),
     ])
   );
 

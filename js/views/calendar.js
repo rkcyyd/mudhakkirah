@@ -50,7 +50,10 @@ function paint(wrap) {
       el("button.btn.btn-ghost.btn-sm", { onclick: goToday }, ["اليوم"]),
       el("button.icon-btn", { onclick: () => shift(1), "aria-label": "الشهر التالي" }, [icon("chevron-start", 18)]),
     ]),
-    el("div.cal-title", {}, [
+    el("div.cal-title", {}, settings.primaryCalendar === "gregorian" ? [
+      el("div.cal-title-hijri", {}, [title.greg]),
+      el("div.cal-title-greg", {}, [title.hijri]),
+    ] : [
       el("div.cal-title-hijri", {}, [title.hijri]),
       el("div.cal-title-greg", {}, [title.greg]),
     ]),
@@ -114,10 +117,7 @@ function dayCell(cell, settings) {
       draggingTaskId = null;
     },
   }, [
-    el("div.cell-nums", {}, [
-      el("span.num-hijri", {}, [toArabicDigits(h.day)]),
-      el("span.num-greg", {}, [toArabicDigits(cell.date.getDate())]),
-    ]),
+    cellNums(h.day, cell.date.getDate(), settings),
     el("div.cell-chips", {},
       visible.slice(0, 3).map((t) => {
         const type = store.getType(t.typeId);
@@ -140,6 +140,20 @@ function dayCell(cell, settings) {
 
 // أثناء السحب: معرّف المهمة المسحوبة حاليًا (حالة وحدة بسيطة، بلا حاجة لمكتبة DnD)
 let draggingTaskId = null;
+
+/** يبني رقمي اليوم (هجري/ميلادي) مع إبراز الأهم حسب إعداد المستخدم. */
+function cellNums(hijriDay, gregDay, settings) {
+  const hijriEl = el("span.num-hijri", {}, [toArabicDigits(hijriDay)]);
+  const gregEl = el("span.num-greg", {}, [toArabicDigits(gregDay)]);
+  if (settings.primaryCalendar === "gregorian") {
+    hijriEl.classList.add("num-secondary");
+    gregEl.classList.add("num-primary");
+    return el("div.cell-nums", {}, [gregEl, hijriEl]);
+  }
+  hijriEl.classList.add("num-primary");
+  gregEl.classList.add("num-secondary");
+  return el("div.cell-nums", {}, [hijriEl, gregEl]);
+}
 
 function dayPanel(settings) {
   const date = fromISODate(state.selected);
@@ -184,7 +198,11 @@ function dayPanel(settings) {
 
   return el("div.day-panel", {}, [
     el("div.day-head", {}, [
-      el("div", {}, [
+      el("div", {}, settings.primaryCalendar === "gregorian" ? [
+        el("div.day-weekday", {}, [d.weekday]),
+        el("div.day-hijri", {}, [d.greg]),
+        el("div.day-greg", {}, [d.hijri]),
+      ] : [
         el("div.day-weekday", {}, [d.weekday]),
         el("div.day-hijri", {}, [d.hijri]),
         el("div.day-greg", {}, [d.greg]),

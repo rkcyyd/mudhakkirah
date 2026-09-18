@@ -9,7 +9,7 @@
 const STORAGE_KEY = "mudhakkirah:v1";
 
 // الحقول الوحيدة من الإعدادات التي تُزامَن بين الأجهزة (البقية خاصة بهذا الجهاز: الثيم، القفل، الإذن...)
-const SYNCABLE_SETTINGS = ["hidePersonalFromCalendar", "showExamCountdown", "weekStart"];
+const SYNCABLE_SETTINGS = ["hidePersonalFromCalendar", "showExamCountdown", "weekStart", "primaryCalendar"];
 
 /* ============================ الحالة الافتراضية ============================ */
 
@@ -90,6 +90,7 @@ function defaultState() {
       theme: "light", // light | dark
       weekStart: 0, // 0 = الأحد
       showExamCountdown: true, // عدّاد تنازلي لأقرب اختبار
+      primaryCalendar: "hijri", // hijri | gregorian — أي تاريخ يظهر أبرز (أكبر) في التقويم
       notificationsEnabled: false, // تنبيهات المهام
       appLockEnabled: false, // قفل بالرمز
       appLockHash: null, // بصمة SHA-256 للرمز (لا يُحفظ الرمز نفسه)

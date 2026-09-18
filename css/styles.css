@@ -329,7 +329,7 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
 .cal-cell:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
 .cal-cell.out { opacity: .4; }
 .cal-cell.selected { border-color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--primary); }
-.cal-cell.today .num-greg { background: var(--today); color: #fff; }
+.cal-cell.today .num-secondary { background: var(--today); color: #fff; }
 .cal-cell.hijri-start { background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
 .cal-cell.drop-target {
   border-color: var(--primary);
@@ -346,8 +346,8 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
   gap: 2px;
   min-width: 0;
 }
-.num-hijri { font-weight: 700; font-size: .85rem; line-height: 1; }
-.num-greg {
+.num-primary { font-weight: 700; font-size: .85rem; line-height: 1; }
+.num-secondary {
   font-size: .62rem;
   color: var(--text-dim);
   min-width: 1.05rem;
@@ -358,8 +358,8 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
   border-radius: 50%;
 }
 @media (min-width: 480px) {
-  .num-hijri { font-size: .95rem; }
-  .num-greg { font-size: .7rem; min-width: 1.15rem; height: 1.15rem; }
+  .num-primary { font-size: .95rem; }
+  .num-secondary { font-size: .7rem; min-width: 1.15rem; height: 1.15rem; }
 }
 
 .cell-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: auto; }

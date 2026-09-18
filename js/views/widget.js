@@ -43,6 +43,7 @@ function paint(wrap) {
   wrap.dataset.day = todayISO;
   const today = new Date();
   const d = describeDay(today);
+  const primaryGreg = store.getSettings().primaryCalendar === "gregorian";
 
   /* شريط علوي ملوّن (يعوّض عن غياب ترويسة نظام قابلة للتصميم) */
   wrap.append(el("div.w-accent"));
@@ -52,8 +53,8 @@ function paint(wrap) {
     el("div.w-head", {}, [
       el("div.w-date", {}, [
         el("div.w-weekday", {}, [d.weekday]),
-        el("div.w-hijri", {}, [d.hijri]),
-        el("div.w-greg", {}, [d.greg]),
+        el("div.w-hijri", {}, [primaryGreg ? d.greg : d.hijri]),
+        el("div.w-greg", {}, [primaryGreg ? d.hijri : d.greg]),
       ]),
       el("div.w-actions", {}, [
         el("button.icon-btn", {
