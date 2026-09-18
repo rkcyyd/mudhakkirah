@@ -1,8 +1,8 @@
 {
   "packageId": "io.github.rkcyyd.mudhakkirah",
   "host": "rkcyyd.github.io",
-  "name": "مذكّرتي",
-  "launcherName": "مذكّرتي",
+  "name": "رزنامة",
+  "launcherName": "رزنامة",
   "display": "standalone",
   "themeColor": "#1F6FEB",
   "themeColorDark": "#000000",
@@ -20,9 +20,9 @@
     "path": "./android.keystore",
     "alias": "mudhakkirah"
   },
-  "appVersionName": "1.0.0",
-  "appVersionCode": 1,
-  "appVersion": "1.0.0",
+  "appVersionName": "1.1.0",
+  "appVersionCode": 3,
+  "appVersion": "1.1.0",
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://rkcyyd.github.io/mudhakkirah/manifest.webmanifest",
