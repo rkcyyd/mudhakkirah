@@ -565,49 +565,119 @@ h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .75rem; }
 
 .icon-btn.sm { width: 30px; height: 30px; }
 
-.habit-grid-wrap {
+/* ------- إحصاءات عامة + أدوات ------- */
+.habit-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: .7rem;
 }
-
-.habit-card {
-  --c: var(--primary);
+.hs-box {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.1rem;
   box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .7rem;
-  text-align: center;
-  transition: box-shadow .2s var(--ease), transform .2s var(--ease);
-  position: relative;
+  padding: .8rem .9rem;
+  display: flex; flex-direction: column; gap: .25rem;
+}
+.hs-label { font-size: .74rem; color: var(--text-dim); font-weight: 700; }
+.hs-value { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.hs-sub { font-size: .74rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.habit-mini-fill.accent { background: linear-gradient(90deg, var(--primary), var(--accent)); }
+
+.habit-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 2px; }
+.seg-btn {
+  border: none; background: transparent; cursor: pointer;
+  padding: .3rem .9rem; border-radius: 8px; font-weight: 700; font-size: .85rem; color: var(--text-dim);
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.seg-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+
+/* ------- الجدول الأسبوعي ------- */
+.habit-table-wrap { overflow-x: auto; border-radius: var(--radius); }
+.habit-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   overflow: hidden;
 }
-.habit-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 64px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 16%, transparent), transparent);
-  pointer-events: none;
+.habit-thead, .habit-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 150px auto 44px;
+  align-items: center;
+  gap: .8rem;
+  padding: .55rem .9rem;
 }
-.habit-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.habit-thead {
+  font-size: .72rem; font-weight: 700; color: var(--text-dim);
+  border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+.ht-col-days { display: flex; gap: 4px; }
+.ht-dh { width: 24px; text-align: center; }
+.habit-row { --c: var(--primary); border-bottom: 1px solid var(--border); transition: background .15s var(--ease); }
+.habit-row:last-child { border-bottom: none; }
+.habit-row:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
 
-.habit-card-top { display: flex; align-items: center; justify-content: space-between; width: 100%; z-index: 1; }
+.ht-col-name { display: flex; align-items: center; gap: .55rem; min-width: 0; font-weight: 700; cursor: pointer; }
+.ht-col-name:hover .habit-row-label { color: var(--primary); }
+.habit-row-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ht-col-progress { display: flex; align-items: center; gap: .5rem; }
+.habit-mini-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.habit-mini-fill { height: 100%; border-radius: 999px; background: var(--c); transition: width .4s var(--ease); }
+.habit-mini-frac { font-size: .74rem; color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ht-col-streak { font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* خلية ✓ (تُستخدم في الأسبوعي والشهري) */
+.habit-check {
+  --c: var(--primary);
+  width: 24px; height: 24px; flex-shrink: 0;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: #fff;
+  cursor: pointer; padding: 0;
+  display: grid; place-items: center;
+  transition: background .15s var(--ease), transform .12s var(--ease), border-color .15s var(--ease);
+}
+.habit-check:hover { border-color: var(--c); transform: scale(1.12); }
+.habit-check.done { background: var(--c); border-color: var(--c); }
+.habit-check.is-today:not(.done) { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.habit-check.future { opacity: .45; }
+
+@media (max-width: 640px) {
+  .habit-thead, .habit-row { grid-template-columns: minmax(90px, 1fr) auto 34px; gap: .5rem; padding: .5rem .6rem; }
+  .ht-col-progress { display: none; }
+  .habit-check { width: 22px; height: 22px; border-radius: 6px; }
+  .ht-dh { width: 22px; }
+  .ht-col-days { gap: 3px; }
+}
+
+/* ------- الجدول الشهري ------- */
+.habit-monthnav { display: flex; align-items: center; justify-content: center; gap: .6rem; margin-bottom: .5rem; }
+.habit-monthname { font-weight: 800; min-width: 130px; text-align: center; }
+.habit-table.month { display: inline-block; min-width: 100%; }
+.mt-row { display: grid; align-items: center; gap: 3px; padding: .35rem .7rem; border-bottom: 1px solid var(--border); }
+.mt-row:last-child { border-bottom: none; }
+.mt-head { background: var(--surface-2); font-size: .68rem; font-weight: 700; color: var(--text-dim); }
+.mt-name { position: sticky; inset-inline-start: 0; z-index: 1; background: inherit; min-width: 0; }
+.mt-row:not(.mt-head) .mt-name { background: var(--surface); }
+.mt-head .mt-name { background: var(--surface-2); }
+.mt-dh { display: flex; flex-direction: column; align-items: center; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.mt-dl { font-size: .6rem; opacity: .7; }
+.mt-dh.today { color: var(--primary); }
+.mt-total { font-size: .74rem; font-weight: 700; text-align: center; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mt-row .habit-check { width: 22px; height: 22px; border-radius: 6px; margin: 0 auto; }
+
+/* ------- نافذة تفصيل عادة (تُستخدم أيضًا داخلها حلقة التقدّم وأيام الأسبوع) ------- */
+.habit-detail { display: flex; flex-direction: column; align-items: center; gap: .8rem; text-align: center; }
 .habit-emoji {
   font-family: var(--emoji-font);
-  font-size: 1.6rem;
-  width: 44px; height: 44px;
   display: grid; place-items: center;
-  background: color-mix(in srgb, var(--c) 16%, var(--surface));
   border-radius: 12px;
 }
-.habit-actions { display: flex; gap: .15rem; }
-.habit-name { font-weight: 700; font-size: .98rem; z-index: 1; }
+.habit-emoji.sm { font-size: 1.15rem; width: 30px; height: 30px; background: color-mix(in srgb, var(--c) 16%, var(--surface-2)); flex-shrink: 0; }
+.habit-emoji.lg { font-size: 2rem; width: 60px; height: 60px; background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
 
 .habit-ring-wrap { position: relative; width: 108px; height: 108px; }
 .habit-ring { width: 100%; height: 100%; }

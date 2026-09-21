@@ -55,11 +55,22 @@ export function escapeHtml(str) {
   }[c]));
 }
 
-/** نافذة منبثقة بسيطة. content دالة تستقبل (close). */
+/**
+ * نافذة منبثقة بسيطة. content دالة تستقبل (body, close).
+ * إن أعادت content دالة تنظيف (مثلًا لإلغاء اشتراك store.subscribe)، تُستدعى
+ * تلقائيًا عند إغلاق النافذة بأي طريقة (زر، الخلفية، أو Escape).
+ */
 export function openModal(title, buildContent) {
   const overlay = el("div.modal-overlay");
   const box = el("div.modal");
-  const close = () => overlay.remove();
+  let cleanup = null;
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    overlay.remove();
+    if (typeof cleanup === "function") { try { cleanup(); } catch {} }
+  };
 
   box.append(
     el("div.modal-head", {}, [
@@ -78,7 +89,7 @@ export function openModal(title, buildContent) {
   });
 
   document.body.append(overlay);
-  buildContent(body, close);
+  cleanup = buildContent(body, close);
   const firstField = body.querySelector("input, textarea, select, button");
   if (firstField) firstField.focus();
   return close;

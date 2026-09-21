@@ -290,12 +290,13 @@ export const store = {
   getHabit(id) {
     return state.habits.find((h) => h.id === id) || null;
   },
-  addHabit({ label, color = "#2da44e", target = 7, icon = "🎯" }) {
+  addHabit({ label, color = "#2da44e", target = 7, icon = "🎯", category = "" }) {
     const habit = {
       id: uid(),
       label: label?.trim() || "عادة جديدة",
       color,
       icon,
+      category, // فئة اختيارية للتصفية (صحة، عبادة، دراسة...)
       target, // عدد الأيام المستهدف أسبوعيًا (1-7)
       archived: false,
       createdAt: new Date().toISOString(),
