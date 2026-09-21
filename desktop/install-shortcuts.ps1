@@ -1,6 +1,6 @@
 ﻿# ينشئ اختصارين:
-#   1) "مذكّرتي" على سطح المكتب  → يفتح التطبيق كاملًا
-#   2) "مذكّرتي — ويدجت" في مجلد بدء التشغيل → يفتح الويدجت تلقائيًا عند تسجيل الدخول
+#   1) "رزنامة" على سطح المكتب  → يفتح التطبيق كاملًا
+#   2) "رزنامة — ويدجت" في مجلد بدء التشغيل → يفتح الويدجت تلقائيًا عند تسجيل الدخول
 #
 # التشغيل:  powershell -ExecutionPolicy Bypass -File desktop\install-shortcuts.ps1
 # للحذف:    powershell -ExecutionPolicy Bypass -File desktop\install-shortcuts.ps1 -Remove
@@ -17,8 +17,8 @@ $wscript = Join-Path $env:WINDIR 'System32\wscript.exe'
 $desktop = [Environment]::GetFolderPath('Desktop')
 $startup = [Environment]::GetFolderPath('Startup')
 
-$appName    = [char]0x0645 + [char]0x0630 + [char]0x0643 + [char]0x0651 + [char]0x0631 + [char]0x062A + [char]0x064A   # مذكّرتي
-$widgetName = $appName + ' ' + [char]0x2014 + ' ' + [char]0x0648 + [char]0x064A + [char]0x062F + [char]0x062C + [char]0x062A  # مذكّرتي — ويدجت
+$appName    = [char]0x0631 + [char]0x0632 + [char]0x0646 + [char]0x0627 + [char]0x0645 + [char]0x0629   # رزنامة
+$widgetName = $appName + ' ' + [char]0x2014 + ' ' + [char]0x0648 + [char]0x064A + [char]0x062F + [char]0x062C + [char]0x062A  # رزنامة — ويدجت
 
 $appLnk    = Join-Path $desktop ($appName + '.lnk')
 $widgetLnk = Join-Path $startup ($widgetName + '.lnk')
@@ -46,8 +46,8 @@ function New-Lnk($finalPath, $arguments, $desc) {
   [System.IO.File]::Move($tmp, $finalPath)
 }
 
-New-Lnk $appLnk    ('"{0}"' -f $vbs)          'مذكّرتي — التقويم والمهام'
-New-Lnk $widgetLnk ('"{0}" widget' -f $vbs)   'مذكّرتي — ويدجت سطح المكتب'
+New-Lnk $appLnk    ('"{0}"' -f $vbs)          'رزنامة — التقويم والمهام'
+New-Lnk $widgetLnk ('"{0}" widget' -f $vbs)   'رزنامة — ويدجت سطح المكتب'
 
 # ضبط الأيقونة عبر Shell.Application (يتعامل مع أسماء الملفات العربية)
 $app = New-Object -ComObject Shell.Application
