@@ -57,8 +57,8 @@ android {
         applicationId "io.github.rkcyyd.mudhakkirah"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 3
-        versionName "1.1.0"
+        versionCode 4
+        versionName "1.2.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
@@ -211,3 +211,5 @@ dependencies {
         implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
     
 }
+
+tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }

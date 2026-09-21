@@ -24,6 +24,7 @@
 
     
         <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+        <uses-permission android:name="android.permission.INTERNET"/>
     
 
     
@@ -75,6 +76,39 @@
                 </intent-filter>
             </activity>
         
+
+        <receiver android:name=".TasksWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tasks"/>
+        </receiver>
+        <receiver android:name=".WeekWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_week"/>
+        </receiver>
+        <receiver android:name=".MonthWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_month"/>
+        </receiver>
+        <receiver android:name=".ExamCountdownWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_exam"/>
+        </receiver>
+        <receiver android:name=".TaskCountdownWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_nexttask"/>
+        </receiver>
+        <receiver android:name=".HabitsWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_habits"/>
+        </receiver>
+        <receiver android:name=".CalendarWidget" android:exported="true" android:label="@string/launcherName">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_calendar"/>
+        </receiver>
+        <activity android:name=".WidgetConfigActivity" android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.Dialog">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/></intent-filter>
+        </activity>
 
         <activity android:name="LauncherActivity"
             android:alwaysRetainTaskState="true"

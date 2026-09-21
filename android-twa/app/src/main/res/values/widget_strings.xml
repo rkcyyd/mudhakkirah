@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="widget_desc_tasks">رزنامة — مهام اليوم والمتأخرة</string>
+  <string name="widget_desc_week">رزنامة — مهام الأسبوع</string>
+  <string name="widget_desc_month">رزنامة — مهام باقي الشهر</string>
+  <string name="widget_desc_exam">رزنامة — عدّاد أقرب اختبار</string>
+  <string name="widget_desc_nexttask">رزنامة — عدّاد أقرب مهمة</string>
+  <string name="widget_desc_habits">رزنامة — العادات اليوم</string>
+  <string name="widget_desc_calendar">رزنامة — التقويم المصغّر</string>
+</resources>

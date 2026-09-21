@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="w_bg">#161B22</color>
+  <color name="w_border">#2A323C</color>
+  <color name="w_text">#E6EDF3</color>
+  <color name="w_dim">#9198A1</color>
+  <color name="w_primary">#4493F8</color>
+  <color name="w_danger">#F85149</color>
+  <color name="w_today_text">#06111F</color>
+</resources>
