@@ -37,16 +37,21 @@ async function keyHash() {
   return key ? sha256Hex(key) : null;
 }
 
+let lastPushedBody = null; // لتجنّب رفع نفس اللقطة مرتين (يوفّر حدود Cloudflare المجانية)
+
 /** يرفع اللقطة المحلية الحالية كما هي (بدون سحب أولًا). */
 async function rawPush() {
   const hash = await keyHash();
   if (!hash) return { ok: false, reason: "no-key" };
   try {
+    const body = JSON.stringify({ keyHash: hash, snapshot: store.getSyncSnapshot() });
+    if (body === lastPushedBody) return { ok: true, skipped: true };
     const res = await fetch(`${PUSH_SERVER_URL}/data/push`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keyHash: hash, snapshot: store.getSyncSnapshot() }),
+      body,
     });
+    if (res.ok) lastPushedBody = body;
     return { ok: res.ok };
   } catch (e) {
     return { ok: false, reason: "network", error: String(e) };
@@ -122,13 +127,17 @@ export function scheduleSyncPush() {
   debounceTimer = setTimeout(pushNow, 2500);
 }
 
-/** يبدأ سحبًا دوريًا (كل ١٥ ثانية) ليصل أي تغيير من جهاز آخر بسرعة معقولة. */
+/** يبدأ سحبًا دوريًا (كل ٤٥ ثانية، ويتوقف عند إخفاء التطبيق) ليصل أي تغيير من جهاز آخر. */
 export function startSyncLoop() {
   if (loopTimer) return;
   if (store.getSettings().syncEnabled) pullNow();
   loopTimer = setInterval(() => {
+    if (document.hidden) return;
     if (store.getSettings().syncEnabled) pullNow();
-  }, 15_000);
+  }, 45_000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && store.getSettings().syncEnabled) pullNow();
+  });
 }
 
 export { pushNow, pullNow };
